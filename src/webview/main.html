@@ -10,6 +10,12 @@
 		--pad: 12px;
 		--radius: 3px;
 		--radius-sm: 2px;
+		/* Two tiers plus two special cases, in px: an em scale compounds through nesting, so `.hint`
+		   measured 12.22px at the top level and 11.49px inside a label and a chip had two sizes.
+		   Absolute steps keep one tier one size; 13px is body copy, 9px is the dirty bullet. */
+		--fs-sm: 12px;
+		--fs-xs: 11px;
+		--z-menu: 20;
 		--mono: var(--vscode-editor-font-family, ui-monospace, monospace);
 		--accent: var(--vscode-focusBorder);
 		--line: var(--vscode-widget-border, var(--vscode-panel-border, #44444455));
@@ -57,30 +63,39 @@
 		white-space: nowrap;
 	}
 	.spacer { flex: 1 1 auto; }
-	.hint { color: var(--dim); font-size: 0.94em; font-weight: 400; }
+	.hint { color: var(--dim); font-size: var(--fs-sm); font-weight: 400; }
+	/* editorWarning-foreground is an icon token (3.1:1 as text); the sentence keeps body ink */
+	.hint.warn-text { color: var(--vscode-foreground); font-weight: 500; }
 
 	/* ---------- controls: one height, one radius, one focus ring ---------- */
 	:where(button, select, input, textarea) {
+		box-sizing: border-box;
 		font: inherit;
 		color: var(--vscode-input-foreground, var(--vscode-foreground));
 		background: var(--vscode-input-background);
 		border: 1px solid var(--vscode-input-border, transparent);
 		border-radius: var(--radius);
-		padding: 4px 8px;
+		padding: 0 8px;
 		min-height: var(--ctrl-h);
 	}
-	textarea { font-family: var(--mono); font-size: 0.94em; resize: vertical; line-height: 1.5; }
+	/* a single-line control is exactly --ctrl-h: "one height" has to survive measurement */
+	:where(button, select, input:not([type="checkbox"])) { height: var(--ctrl-h); }
+	textarea { padding: 4px 8px; }
+	.search input, .menu button, button.icon { height: auto; }
+	textarea { font-family: var(--mono); font-size: var(--vscode-editor-font-size, 12px); resize: vertical; line-height: 1.5; }
+	/* every code surface frames like a code surface, including the two script editors */
+	#pre-script, #test-script { border-color: var(--edge); }
 	/* ---------- JSON editor: a highlight layer behind a transparent textarea ---------- */
 	/* ponytail: no editor library — the value stays a real <textarea>, so selection, IME, undo and
 	   form semantics stay the browser's job instead of ours. */
-	.code-editor { display: grid; }
+	.code-editor { display: grid; flex: 0 1 auto; min-height: calc(var(--ctrl-h) * 4); }
 	.code-editor > textarea,
 	.code-editor > .hl {
 		grid-area: 1 / 1;
 		margin: 0;
-		padding: 6px 8px;
+		padding: 8px 10px;
 		font-family: var(--mono);
-		font-size: 0.94em;
+		font-size: var(--vscode-editor-font-size, 12px);
 		line-height: 1.5;
 		letter-spacing: 0;
 		tab-size: 2;
@@ -95,13 +110,17 @@
 	.code-editor > .hl {
 		overflow: hidden;
 		pointer-events: none;
-		background: var(--vscode-input-background);
+		/* the same fill as `.outs`: two code surfaces, one colour */
+		background: var(--vscode-textCodeBlock-background, var(--surface-2));
 		color: var(--vscode-input-foreground, var(--vscode-foreground));
 	}
 	.code-editor > textarea {
 		overflow: auto;
 		resize: vertical;
 		background: transparent;
+		/* the editor is a code surface, so it frames like `.outs` rather than like a one-line input
+		   (the host's input border measured 1.5:1 and looked like a hole next to its own output box) */
+		border-color: var(--edge);
 		color: transparent;
 		caret-color: var(--vscode-editorCursor-foreground, var(--vscode-foreground));
 	}
@@ -116,6 +135,8 @@
 		.code-editor > textarea { color: CanvasText; }
 	}
 	.code-editor > textarea:focus { border-color: var(--accent); }
+	/* the focus ring is the border here; an outline on top of it draws the frame twice */
+	.code-editor > textarea:focus-visible { outline: none; }
 	.code-editor:not(.hl-on) > .hl { display: none; }
 	.code-editor:not(.hl-on) > textarea { color: var(--vscode-input-foreground, var(--vscode-foreground)); }
 	/* token colours are the host's own JSON token colours, so the editor matches every theme */
@@ -124,6 +145,20 @@
 	.hl .t-n { color: var(--vscode-debugTokenExpression-number, var(--vscode-symbolIcon-numberForeground, #b5cea8)); }
 	.hl .t-l { color: var(--vscode-debugTokenExpression-boolean, var(--vscode-symbolIcon-booleanForeground, #569cd6)); }
 	.hl .t-p { color: var(--vscode-descriptionForeground, var(--vscode-foreground)); }
+	/* the chains above end on dark-theme literals; on a light surface those measured 1.6:1 (number) and
+	   2.8:1 (boolean), so a light theme gets the Light+ values explicitly and HC-light gets plain ink */
+	body.vscode-light #body-out .t-n,
+	body.vscode-light #tree-out .tval-num,
+	body.vscode-light .hl .t-n { color: #098658; }
+	body.vscode-light #body-out .t-l,
+	body.vscode-light #tree-out .tval-lit,
+	body.vscode-light .hl .t-l { color: #0000ff; }
+	body.vscode-high-contrast-light #body-out .t-n,
+	body.vscode-high-contrast-light #body-out .t-l,
+	body.vscode-high-contrast-light #tree-out .tval-num,
+	body.vscode-high-contrast-light #tree-out .tval-lit,
+	body.vscode-high-contrast-light .hl .t-n,
+	body.vscode-high-contrast-light .hl .t-l { color: var(--vscode-foreground); }
 	select { cursor: pointer; }
 	::placeholder { color: var(--vscode-input-placeholderForeground, var(--dim)); opacity: 1; }
 
@@ -132,6 +167,8 @@
 		outline-offset: 1px;
 	}
 	input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+	/* the border is the ring for fields: an outline on top of it draws the frame twice */
+	input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 
 	button {
 		background: var(--vscode-button-secondaryBackground, transparent);
@@ -141,18 +178,23 @@
 		transition: background-color 90ms ease-out, opacity 90ms ease-out;
 	}
 	button:hover { background: var(--vscode-button-secondaryHoverBackground, var(--vscode-toolbar-hoverBackground, transparent)); }
-	button.secondary { border: 1px solid var(--edge); background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-	button:not(.primary):not(.icon):not(.secondary):not(.ghost):active { background-color: var(--vscode-button-hoverBackground, #026ec1); }
+	button.secondary { border: 1px solid var(--edge); }
+	/* a pressed control darkens in its own family; the primary fill belongs to Send alone */
+	button:not(.primary):not(.icon):not(.secondary):not(.ghost):active { background-color: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground, #80808033)); }
 	button.primary:active { background: var(--vscode-button-hoverBackground, #026ec1); }
+	button.icon:active, button.ghost:active, button.secondary:active, .menu button:active { background: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground, #80808033)); }
+	.tab:active { color: var(--vscode-foreground); background: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground, #80808033)); }
 	button:disabled { opacity: 0.5; cursor: default; }
 	/* in flight: dimmed but still activatable, so a second send supersedes the first */
+	/* busy is not disabled: the progress bar and Cancel carry the state, the button keeps its fill */
 	button[aria-disabled="true"] { opacity: 0.6; }
 
 	button.primary {
+		border-color: transparent;
 		background: var(--vscode-button-background);
 		color: var(--vscode-button-foreground);
 		font-weight: 600;
-		padding-inline: 18px;
+		padding-inline: 16px;
 	}
 	button.primary:hover { background: var(--vscode-button-hoverBackground); }
 
@@ -182,8 +224,8 @@
 		background: transparent;
 		border-color: transparent;
 		color: var(--dim);
-		padding: 2px 4px;
-		min-height: 22px;
+		padding: 2px 9px;
+		min-height: var(--ctrl-h);
 	}
 	button.ghost:hover { background: var(--vscode-toolbar-hoverBackground, #80808022); color: var(--vscode-textLink-foreground, var(--vscode-foreground)); }
 	/* the caret, scrollbar and selection are part of the design too */
@@ -192,6 +234,9 @@
 	::-webkit-scrollbar-thumb:active { background: var(--vscode-scrollbarSlider-activeBackground, #bfbfbf99); }
 
 	select.compact { flex: 0 1 auto; min-width: 0; }
+	#env { min-width: 132px; }
+	/* the socket fields hold a URL and a JSON frame: same tier as every other data field */
+	#socket-url, #socket-message { font-family: var(--mono); font-size: var(--fs-sm); }
 
 	.row { display: flex; gap: var(--row-gap); align-items: center; flex-wrap: wrap; min-width: 0; }
 	.row > input { flex: 1 1 160px; min-width: 0; }
@@ -199,8 +244,8 @@
 	/* ---------- composer ---------- */
 	.composer { display: flex; flex-direction: column; gap: var(--row-gap); }
 	.send-row { display: flex; gap: 6px; align-items: stretch; min-width: 0; }
-	.send-row .method { flex: 0 0 auto; font-weight: 600; font-family: var(--mono); letter-spacing: 0.02em; }
-	#url { flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: 0.96em; }
+	.send-row .method { flex: 0 0 auto; font-weight: 600; font-family: var(--mono); font-size: var(--fs-sm); letter-spacing: 0.02em; }
+	#url { flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: var(--fs-sm); }
 
 	.meta-row { display: flex; gap: 6px; align-items: center; min-width: 0; }
 	.identity {
@@ -212,15 +257,16 @@
 		font-size: 1em;
 	}
 	#identity-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 38ch; font-weight: 600; }
-	#dirty-dot { color: var(--warn); font-size: 0.7em; vertical-align: 0.35em; }
+	#dirty-dot { color: var(--warn); font-size: 9px; vertical-align: 0.35em; }
 
 	.menu-wrap { position: relative; display: inline-flex; }
 	.menu {
 		position: absolute;
 		inset-inline-end: 0;
 		top: calc(var(--ctrl-h) + 4px);
-		z-index: 20;
+		z-index: var(--z-menu);
 		min-width: 250px;
+		max-width: min(360px, calc(100vw - 24px));
 		padding: 4px;
 		display: flex;
 		flex-direction: column;
@@ -249,13 +295,17 @@
 		border-radius: var(--radius);
 		background: var(--vscode-inputValidation-warningBackground, #ffcc0033);
 		border: 1px solid var(--vscode-inputValidation-warningBorder, color-mix(in srgb, var(--warn) 65%, transparent));
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 	}
 	.notice[data-kind="error"] { background: var(--vscode-inputValidation-errorBackground, #f00d4a11); border-color: var(--vscode-inputValidation-errorBorder, var(--err)); }
 	.notice[data-kind="warn"] { background: color-mix(in srgb, var(--warn) 12%, transparent); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
 	.notice[data-kind="info"] { background: var(--vscode-inputValidation-infoBackground, #0af3); border-color: var(--vscode-inputValidation-infoBorder, var(--line)); }
 
+	/* absolutely placed: showing it must never shift the request pane or the response by 11px */
 	.progress {
+		position: absolute;
+		inset-inline: 0;
+		top: 0;
 		height: 3px;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
@@ -277,12 +327,16 @@
 
 	/* ---------- tabs ---------- */
 	.tabs {
+		/* the pane scrolls, the navigation does not: a clipped tab strip is a dead end */
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		background: var(--vscode-editor-background, var(--surface));
 		display: flex;
 		gap: 2px;
-		align-items: center;
+		align-items: baseline;
 		flex-wrap: wrap;
 		border-bottom: 1px solid var(--line);
-		padding-bottom: 0;
 	}
 	.tab {
 		border: none;
@@ -295,17 +349,21 @@
 		color: var(--dim);
 		font-weight: 400;
 		display: inline-flex;
-		align-items: center;
-		gap: 5px;
+		/* baseline, not center: a count must sit on the label's baseline, not the box centre */
+		align-items: baseline;
+		gap: 6px;
 	}
 	.tab:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, #80808022); }
 	.tab.active { color: var(--vscode-foreground); border-bottom-color: var(--accent); }
-	.tab .count { color: var(--dim); font-size: 0.8em; font-variant-numeric: tabular-nums; }
-	.tab .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--vscode-textLink-foreground, var(--accent)); display: none; }
-	.tab .dot[data-on="true"] { display: inline-block; }
+	.tab .count { color: var(--dim); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+	.tab .count:empty { display: none; }
+	/* "this tab has content" is not a selection cue: same ink as the label, one rank quieter */
+	.tab .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+	.tab .dot.warn-dot { background: var(--warn); color: var(--warn); opacity: 1; }
 
 	/* ---------- request panes ---------- */
-	.request { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; height: var(--composer-max, auto); max-height: calc(var(--pane-max-ratio, 0.78) * 100vh); overflow: auto; flex: 0 0 auto; }
+	/* the ratio cap and the leave-room-for-the-response cap, whichever is smaller */
+	.request { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; height: var(--composer-max, auto); max-height: max(120px, min(calc(var(--pane-max-ratio, 0.78) * 100vh), calc(100vh - 210px))); overflow: auto; flex: 0 0 auto; }
 	.panes { min-height: 0; display: flex; flex-direction: column; }
 	.pane { display: none; flex-direction: column; gap: var(--row-gap); min-height: 0; }
 	.pane.active { display: flex; }
@@ -313,9 +371,11 @@
 	.sub.active { display: flex; }
 
 	.kv-row { display: grid; grid-template-columns: minmax(90px, 240px) minmax(0, 1fr) var(--ctrl-h); gap: 4px; margin-bottom: var(--row-gap); }
-	.kv-row input { width: 100%; min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+	.kv-row input { width: 100%; min-width: 0; font-family: var(--mono); font-size: var(--fs-sm); }
 	.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; gap: 4px; }
-	.kv-row:has(.pick) { grid-template-columns: minmax(90px, 0.8fr) auto minmax(0, 1.4fr) var(--ctrl-h); }
+	/* field name, the picker, the file it chose, the remove button: four children, four tracks */
+	.kv-row:has(.pick) { grid-template-columns: minmax(90px, 240px) auto minmax(0, 1fr) var(--ctrl-h); }
+	.file-row .pick, .file-row .fname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kv-row .fname {
 		align-self: center;
 		overflow: hidden;
@@ -323,34 +383,53 @@
 		white-space: nowrap;
 		color: var(--dim);
 		font-family: var(--mono);
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 	}
-	.kv input { min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+	.kv input { min-width: 0; font-family: var(--mono); font-size: var(--fs-sm); }
 
 	.fields { display: flex; flex-direction: column; gap: 4px; }
-	.fields label { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 0.94em; }
+	.fields label { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: center; font-size: var(--fs-sm); }
 	.fields label span { color: var(--dim); }
-	.fields input { min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+	.fields input { min-width: 0; font-family: var(--mono); font-size: var(--fs-sm); }
 
-	.field-label { display: flex; gap: 8px; align-items: baseline; color: var(--vscode-foreground); font-size: 0.94em; font-weight: 500; }
-	.check { display: inline-flex; gap: 5px; align-items: center; color: var(--dim); font-size: 0.94em; cursor: pointer; }
-	.check input { min-height: 0; margin: 0; }
+	.field-label { display: flex; gap: 8px; align-items: baseline; color: var(--vscode-foreground); font-size: var(--fs-sm); font-weight: 500; }
+	.check { display: inline-flex; gap: 5px; align-items: center; color: var(--dim); font-size: var(--fs-sm); cursor: pointer; }
+	.check input { min-height: 0; margin: 0; accent-color: var(--vscode-focusBorder, var(--accent)); }
 
-	.chip {
+	/* one pill for every state: the dot is positioned, not a flex item, so the label keeps the
+	   row baseline instead of inheriting the dot's (baseline-less) bottom edge */
+	.chip, .badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
-		padding: 1px 7px;
+		position: relative;
+		padding: 1px 8px 1px 20px;
 		border-radius: var(--radius);
-		font-size: 0.86em;
+		font-size: var(--fs-sm);
 		font-weight: 600;
 		white-space: nowrap;
+		/* a long reason phrase must not widen the strip past the panel */
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		color: var(--vscode-foreground);
 		border: 1px solid var(--status, var(--dim));
 		background: color-mix(in srgb, var(--status, var(--dim)) 8%, transparent);
 	}
-	.chip.bad { --status: var(--err); }
-	.chip.ok { --status: var(--ok); }
+	.chip::before, .badge::before {
+		content: '';
+		position: absolute;
+		inset-inline-start: 8px;
+		top: 50%;
+		translate: 0 -50%;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--status, currentColor);
+	}
+	.chip.bad, .badge.err { --status: var(--err); }
+	.chip.ok, .badge.ok { --status: var(--ok); }
+	.chip.warn, .badge.warn { --status: var(--warn); }
+	.badge.neutral { --status: var(--dim); }
 
 	/* ---------- splitter ---------- */
 	#splitter {
@@ -393,6 +472,7 @@
 
 	/* ---------- response ---------- */
 	#response {
+		position: relative;
 		flex: 1 1 0;
 		min-height: 90px;
 		display: flex;
@@ -411,16 +491,15 @@
 		border: 1px dashed var(--edge);
 		border-radius: var(--radius);
 		color: var(--dim);
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 		max-width: 78ch;
 		/* first run reads like a card in the middle of the pane, not a stray paragraph */
 		margin: auto;
-		align-self: center;
 	}
 	.empty strong { color: var(--vscode-foreground); font-weight: 600; }
 	kbd {
 		font-family: inherit;
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 		padding: 0 4px;
 		border: 1px solid var(--edge);
 		border-bottom-width: 2px;
@@ -434,7 +513,7 @@
 		align-items: baseline;
 		flex-wrap: wrap;
 		row-gap: 4px;
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 	}
 	/* mono is for measured values, not for the verdict words around them */
 	.status .metric { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -444,39 +523,28 @@
 		color: var(--err);
 		white-space: normal;
 		font-family: var(--vscode-font-family);
-		font-size: 1em;
-		max-width: 100%;
+		/* the actionable sentence is body copy, not the 12px value tier (`1em` inside .status = 12) */
+		font-size: var(--vscode-font-size, 13px);
+		max-width: 72ch;
 	}
 	.status .metric.prose { color: var(--vscode-foreground); }
 	#status-detail:empty, #status-scripts:empty { display: none; }
 	.status .badge, .status .chip { font-family: var(--vscode-font-family); }
 	.status .metric b { color: var(--vscode-foreground); font-weight: 600; }
-	/* the inline failure hint is a nudge, not the report: trim it, the Scripts tab has the rest */
-	#status-scripts .metric { max-width: 34ch; overflow: hidden; text-overflow: ellipsis; }
+	/* the inline failure hint is a nudge, not the report: one line, ellipsised, Scripts has the rest */
+	#status-scripts .metric { max-width: 40ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.status .fact { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; max-width: 100%; }
+	.status .sep { color: var(--dim); }
 
-	.badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 5px;
-		padding: 1px 8px;
-		border-radius: var(--radius);
-		font-weight: 700;
-		/* em, not px: the badge must scale with the host font size like everything else */
-		font-size: 0.98em;
-		color: var(--vscode-foreground);
-		border: 1px solid var(--status, var(--dim));
-		background: color-mix(in srgb, var(--status, var(--dim)) 8%, transparent);
-	}
-	.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--status, currentColor); }
-	.badge.ok { --status: var(--ok); }
-	.badge.warn { --status: var(--warn); }
-	.badge.err { --status: var(--err); }
-
-	.response-tabs { gap: 4px; border-bottom: none; }
-	.strip-label { color: var(--dim); font-size: 0.86em; letter-spacing: 0.04em; text-transform: uppercase; padding-inline-end: 2px; }
+	/* the response strip is the same tablist: same gap, and the row's rule is the only rule */
+	.response-tabs { border-bottom: none; }
+	.strip-label { color: var(--dim); font-size: var(--fs-xs); letter-spacing: 0.04em; text-transform: uppercase; padding-inline-end: 2px; }
 	/* the toolbar is one row: tabs, slack, then find + copy/save */
-	.response-bar { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
-	.response-bar .search { flex: 0 1 260px; min-width: 120px; max-width: 320px; margin-inline-start: auto; }
+	/* the output box draws its own frame, top included: the bar does not add a second rule */
+	.response-bar { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; padding-bottom: 6px; }
+	/* the output box starts where the bar's padding ends, so the active underline touches its rule */
+	#body-out, #tree-out, #res-hdrs { margin-block-start: -6px; }
+	.response-bar .search { flex: 0 1 260px; min-width: 120px; max-width: 320px; }
 	/* the row actions are one unit: they must never split across two rows */
 	.actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
 	.search {
@@ -496,7 +564,7 @@
 		background: transparent;
 		padding: 0;
 		min-height: 20px;
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 		min-width: 0;
 		flex: 1 1 auto;
 	}
@@ -504,8 +572,8 @@
 	.search-icon { color: var(--dim); flex: 0 0 auto; }
 	#res-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-	.outs {
-		flex: 1 1 0;
+	/* one surface for every block of output: response body, snippets, script output */
+	.outs, .snippet, .results pre {
 		margin: 0;
 		padding: 8px 10px;
 		border: 1px solid var(--edge);
@@ -515,21 +583,29 @@
 		font-family: var(--mono);
 		font-size: var(--vscode-editor-font-size, 12px);
 		line-height: 1.5;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		background: var(--vscode-textCodeBlock-background, var(--surface-2));
+		white-space: pre;
 		tab-size: 2;
+		background: var(--vscode-textCodeBlock-background, var(--surface-2));
 	}
+	.outs { flex: 1 1 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+	.snippet { min-height: 90px; white-space: pre-wrap; overflow-wrap: anywhere; }
+	.results pre { margin-block-start: 4px; max-height: 160px; }
+	/* an empty response is a fact, not a blank rectangle — and the Headers pane is not the body */
+	#body-out:empty::before { content: 'Response body is empty'; color: var(--dim); }
+	#res-hdrs:empty::before { content: 'This response has no headers'; color: var(--dim); }
+	/* an empty socket log says the session has not started, like every other empty surface */
+	#socket-log:empty::before { content: 'No frames yet — connect to start a session'; color: var(--dim); font-style: normal; }
 	.stale-banner {
 		display: flex;
 		gap: 8px;
 		align-items: center;
 		padding: 4px 8px;
 		border-radius: var(--radius);
-		border: 1px solid var(--vscode-inputValidation-warningBorder, color-mix(in srgb, var(--warn) 65%, transparent));
-		background: var(--vscode-inputValidation-warningBackground, color-mix(in srgb, var(--warn) 12%, transparent));
+		border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+		/* a note about the body on screen, not an alarm: the failure sentence above it is the alarm */
+		background: transparent;
 		color: var(--vscode-foreground);
-		font-size: 0.94em;
+		font-size: var(--fs-sm);
 	}
 	/* a neutral note (which surface am I looking at?) must not borrow the warning frame */
 	.context-note {
@@ -538,51 +614,53 @@
 		color: var(--dim);
 	}
 	.stale-banner b { color: var(--vscode-foreground); font-weight: 600; }
-	.headers-out { white-space: pre-wrap; font-size: 0.94em; }
+	.headers-out { white-space: pre-wrap; font-size: var(--fs-sm); }
 	#body-out mark { background: var(--vscode-editor-findMatchHighlightBackground, #ea5c0055); color: inherit; border-radius: var(--radius-sm); }
 
+	/* the same token classes colour the response body, so both JSON surfaces look like the panel */
+	#body-out .t-k { color: var(--vscode-symbolIcon-propertyForeground, var(--vscode-debugTokenExpression-name, #9cdcfe)); }
+	#body-out .t-s { color: var(--vscode-debugTokenExpression-string, var(--vscode-symbolIcon-stringForeground, #ce9178)); }
+	#body-out .t-n { color: var(--vscode-debugTokenExpression-number, var(--vscode-symbolIcon-numberForeground, #b5cea8)); }
+	#body-out .t-l { color: var(--vscode-debugTokenExpression-boolean, var(--vscode-symbolIcon-booleanForeground, #569cd6)); }
+	#body-out .t-p { color: var(--vscode-descriptionForeground, var(--vscode-foreground)); }
 	#tree-out details { margin-inline-start: 12px; }
 	#tree-out summary { cursor: pointer; padding: 1px 0; }
 	#tree-out summary::marker { color: var(--dim); }
 	#tree-out .tkey { color: var(--vscode-symbolIcon-propertyForeground, var(--vscode-foreground)); }
-	#tree-out .ttype { color: var(--dim); font-size: 0.94em; margin-inline-start: 6px; }
+	#tree-out .ttype { color: var(--dim); font-size: var(--fs-sm); margin-inline-start: 6px; flex: 0 0 auto; }
 	#tree-out .tval { color: var(--vscode-symbolIcon-stringForeground, var(--vscode-foreground)); }
+	#tree-out .tval-num { color: var(--vscode-debugTokenExpression-number, var(--vscode-symbolIcon-numberForeground, #b5cea8)); }
+	#tree-out .tval-lit { color: var(--vscode-debugTokenExpression-boolean, var(--vscode-symbolIcon-booleanForeground, #569cd6)); }
+	/* one depth is one text column: the marker gets a fixed box instead of the platform's advance */
+	#tree-out summary { list-style: none; }
+	#tree-out summary::-webkit-details-marker { display: none; }
+	#tree-out summary::before { content: '▸'; color: var(--dim); display: inline-block; width: 12px; margin-inline-start: -12px; }
+	#tree-out details[open] > summary::before { content: '▾'; }
+	/* name | type: the type sits in its own track so eight rows share one edge */
+	/* flex, not a 1fr grid: the type sits just after its value instead of on the pane's right edge */
+	#tree-out .tleaf { display: flex; gap: 6px; align-items: baseline; padding: 1px 0; }
 	#tree-out .tleaf { padding-inline-start: 12px; }
-
-	.snippet {
-		margin: 0;
-		padding: 8px 10px;
-		min-height: 90px;
-		overflow: auto;
-		/* the socket log and the response body are the same kind of surface */
-		border: 1px solid var(--edge);
-		border-radius: var(--radius);
-		background: var(--vscode-textCodeBlock-background, var(--surface-2));
-		font-family: var(--mono);
-		font-size: var(--vscode-editor-font-size, 12px);
-		line-height: 1.5;
-		white-space: pre;
-		tab-size: 2;
-		border-radius: var(--radius);
-	}
+	/* the same sentence style the response card uses, so "nothing here" looks like one idea */
+	.pane-note { color: var(--dim); font-size: var(--fs-sm); }
 
 	/* script results: real contrast, never dimmed */
-	.results { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.94em; min-height: 24px; }
-	.results .fail { color: var(--err); font-family: var(--mono); font-size: 0.96em; }
+	.results { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: var(--fs-sm); min-height: var(--ctrl-h); }
+	.results .fail { color: var(--err); font-family: var(--mono); overflow-wrap: anywhere; min-width: 0; }
 	.results details { width: 100%; }
-	.results pre { margin: 4px 0 0; padding: 6px 8px; background: var(--vscode-textCodeBlock-background, var(--surface-2)); border-radius: var(--radius); font-family: var(--mono); font-size: 0.94em; max-height: 160px; overflow: auto; }
 
 	/* socket log: direction and errors are visually distinct */
 	#socket-log .line { display: block; }
 	#socket-log .line.in { color: var(--vscode-textLink-foreground, var(--vscode-foreground)); }
-	#socket-log .line.out { color: var(--vscode-terminal-ansiMagenta, var(--vscode-charts-purple, var(--vscode-symbolIcon-methodForeground))); }
+	/* Out is you, In is them: distinct in every theme. A hard-coded magenta measured 2.6:1 on the
+	   light surface, so the chain ends on the host's own pass colour rather than a literal. */
+	#socket-log .line.out { color: var(--vscode-terminal-ansiMagenta, var(--vscode-testing-iconPassed, var(--vscode-symbolIcon-methodForeground))); }
 	#socket-log .line.system { color: var(--dim); font-style: italic; }
 	#socket-log .line.error { color: var(--err); }
 
 	/* ---------- host surfaces: selection, scrollbars, code ---------- */
 	::selection { background: var(--vscode-editor-selectionBackground, #264f78); color: var(--vscode-editor-selectionForeground, inherit); }
 	* { scrollbar-color: var(--vscode-scrollbarSlider-background) transparent; scrollbar-width: thin; }
-	code { font-family: var(--mono); font-size: 0.96em; background: var(--vscode-textCodeBlock-background, var(--surface-2)); padding: 0 3px; border-radius: var(--radius-sm); }
+	code { font-family: var(--mono); font-size: 1em; background: var(--vscode-textCodeBlock-background, var(--surface-2)); padding: 0 3px; border-radius: var(--radius-sm); }
 
 	/* ---------- narrow panels: nothing clipped ---------- */
 	@media (max-width: 560px) {
@@ -591,7 +669,13 @@
 		.response-bar { row-gap: 4px; }
 		.response-bar .search { flex: 1 1 96px; max-width: none; min-width: 96px; }
 		.kv { grid-template-columns: 1fr 1fr; }
-		.kv-row, .kv-row:has(.pick) { grid-template-columns: minmax(72px, 1fr) minmax(0, 1.4fr) var(--ctrl-h); }
+		.kv-row { grid-template-columns: minmax(72px, 1fr) minmax(0, 1.4fr) var(--ctrl-h); }
+		/* a file row has four children; its first track is the same `minmax(72px, 1fr)` the row above
+		   uses, so the two rows share a column edge and the picker shrinks instead of wrapping ✕ */
+		.kv-row:has(.pick) { grid-template-columns: minmax(72px, 1fr) minmax(0, 0.6fr) minmax(0, 1fr) var(--ctrl-h); }
+		.file-row .pick { padding-inline: 6px; text-overflow: ellipsis; }
+		#auth-apikey .kv { grid-template-columns: 1fr; }
+		#auth-apikey .kv > :last-child { grid-column: 1 / -1; }
 		.fields label { grid-template-columns: 1fr; gap: 2px; }
 		/* grid, so the URL takes exactly the slack and the action can never be pushed off-screen */
 		.send-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: stretch; }
@@ -602,6 +686,29 @@
 		.send-row:has(#cancel:not([hidden])) { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 	}
 
+	/* in high contrast every hairline is a border the user must be able to see */
+	body.vscode-high-contrast,
+	body.vscode-high-contrast-light {
+		--line: var(--vscode-contrastBorder, var(--vscode-foreground));
+		--edge: var(--vscode-contrastBorder, var(--vscode-foreground));
+	}
+	/* high contrast is solid borders by definition; the first-run card is the only dashed edge */
+	body.vscode-high-contrast .empty,
+	body.vscode-high-contrast-light .empty { border-style: solid; }
+	body.vscode-high-contrast code,
+	body.vscode-high-contrast-light code { border: 1px solid var(--vscode-contrastBorder, var(--vscode-foreground)); }
+	body.vscode-high-contrast .empty,
+	body.vscode-high-contrast .notice,
+	body.vscode-high-contrast .menu,
+	body.vscode-high-contrast .search,
+	body.vscode-high-contrast .stale-banner,
+		body.vscode-high-contrast kbd,
+	body.vscode-high-contrast-light .empty,
+	body.vscode-high-contrast-light .notice,
+	body.vscode-high-contrast-light .menu,
+	body.vscode-high-contrast-light .search,
+	body.vscode-high-contrast-light .stale-banner,
+		body.vscode-high-contrast-light kbd { border-color: var(--vscode-contrastBorder, var(--vscode-foreground)); }
 	body.vscode-high-contrast .hint,
 	body.vscode-high-contrast .identity,
 	body.vscode-high-contrast .tab,
@@ -646,14 +753,14 @@
 			</select>
 			<label class="sr-only" for="url">Request URL</label>
 			<input id="url" type="text" placeholder="https://api.example.com/users" spellcheck="false" autocomplete="off" />
-			<button id="send" class="primary" title="Send request (Ctrl+Enter)">Send</button>
+			<button id="send" class="primary">Send</button>
 			<button id="cancel" class="icon" title="Cancel request (Esc)" aria-label="Cancel request" hidden>
 				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
 			</button>
 		</div>
 
 		<div class="meta-row">
-			<span class="identity" title="Saved request path">
+			<span class="identity">
 				<span id="identity-name">Untitled request</span>
 				<span id="dirty-dot" title="Unsaved changes" aria-hidden="true" hidden>●</span>
 				<span id="dirty-sr" class="sr-only" aria-live="polite"></span>
@@ -661,33 +768,37 @@
 			<span class="spacer"></span>
 			<label class="sr-only" for="env">Environment</label>
 			<select id="env" class="compact" title="Variables come from this environment"></select>
-			<button id="save" class="icon" title="Save to collection (Ctrl+S)" aria-label="Save to collection">
+			<button id="save" class="icon" aria-label="Save to collection">
 				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h8l2 2v10H3z" /><path d="M5.5 2v4h5V2M5.5 10h5" /></svg>
 			</button>
 			<span id="more-wrap" class="menu-wrap">
 				<button id="more" class="icon" title="More actions" aria-label="More actions" aria-haspopup="true" aria-expanded="false">
-					<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.2" /><circle cx="8" cy="8" r="1.2" /><circle cx="13" cy="8" r="1.2" /></svg>
+					<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.05" /><circle cx="8" cy="8" r="1.05" /><circle cx="13" cy="8" r="1.05" /></svg>
 				</button>
 				<div id="more-menu" class="menu" role="menu" aria-label="Request actions" hidden>
-					<button role="menuitem" data-action="new-collection">New collection…</button>
-					<button role="menuitem" data-action="import-curl">Import cURL from clipboard</button>
-					<button role="menuitem" data-action="import-postman">Import Postman collection…</button>
-					<button role="menuitem" data-action="import-openapi">Import OpenAPI…</button>
-					<button role="menuitem" data-action="export-curl">Copy as cURL</button>
-					<button role="menuitem" data-action="edit-envs">Edit environments…</button>
-					<button role="menuitem" data-action="reload">Reload request</button>
+					<button role="menuitem" tabindex="-1" data-action="new-collection">New collection…</button>
+					<button role="menuitem" tabindex="-1" data-action="import-curl">Import cURL from clipboard</button>
+					<button role="menuitem" tabindex="-1" data-action="import-postman">Import Postman collection…</button>
+					<button role="menuitem" tabindex="-1" data-action="import-openapi">Import OpenAPI…</button>
+					<button role="menuitem" tabindex="-1" data-action="export-curl">Copy as cURL</button>
+					<button role="menuitem" tabindex="-1" data-action="edit-envs">Edit environments…</button>
+					<button role="menuitem" tabindex="-1" data-action="reload">Reload request</button>
 				</div>
 			</span>
 		</div>
 	</header>
 
-	<div id="notice" class="notice" hidden></div>
+	<div id="notice" class="notice" hidden>
+		<span id="notice-text"></span>
+		<button class="icon" id="notice-close" title="Dismiss" aria-label="Dismiss this notice">
+			<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+		</button>
+	</div>
 	<p id="notice-live" class="sr-only" aria-live="polite"></p>
-	<div id="send-progress" class="progress" hidden aria-hidden="true"></div>
 
-	<section class="request" id="request-pane">
+	<section class="request" id="request-pane" aria-label="Request">
 		<nav class="tabs" role="tablist" aria-label="Request">
-			<button class="tab active" role="tab" id="tab-headers" aria-selected="true" aria-controls="pane-headers" tabindex="0" data-pane="headers">Headers<span class="count" id="header-count"></span></button>
+			<button class="tab active" role="tab" id="tab-headers" aria-selected="true" aria-controls="pane-headers" tabindex="0" data-pane="headers">Headers<span class="count" id="header-count"></span><span class="dot warn-dot" id="headers-dot" hidden></span></button>
 			<button class="tab" role="tab" id="tab-body" aria-selected="false" aria-controls="pane-body" tabindex="-1" data-pane="body">Body<span class="dot" id="body-dot" hidden></span></button>
 			<button class="tab" role="tab" id="tab-auth" aria-selected="false" aria-controls="pane-auth" tabindex="-1" data-pane="auth">Auth<span class="dot" id="auth-dot" hidden></span></button>
 			<button class="tab" role="tab" id="tab-code" aria-selected="false" aria-controls="pane-code" tabindex="-1" data-pane="code">Code</button>
@@ -696,15 +807,15 @@
 		</nav>
 
 		<div class="panes">
-			<div class="pane active" id="pane-headers" role="tabpanel" tabindex="0" aria-label="Headers">
+			<div class="pane active" id="pane-headers" role="tabpanel" role="tabpanel" aria-label="Headers">
 				<div id="headers"></div>
 				<span class="row">
-					<button class="ghost add" id="add-header">+ Add header</button>
-					<span id="header-warn" class="chip bad" hidden>Duplicate names — the last one wins</span>
+					<button class="ghost" id="add-header">+ Add header</button>
+					<span id="header-warn" class="chip bad" role="status" hidden>Duplicate name — the values are joined</span>
 				</span>
 			</div>
 
-			<div class="pane" id="pane-body" role="tabpanel" tabindex="0" aria-label="Body">
+			<div class="pane" id="pane-body" role="tabpanel" role="tabpanel" aria-label="Body">
 				<div class="row">
 					<label class="sr-only" for="body-type">Body type</label>
 					<select id="body-type" class="compact">
@@ -719,6 +830,7 @@
 					</select>
 					<span id="ct-hint" class="hint"></span>
 					<span id="json-bad" class="chip bad" hidden>Invalid JSON</span>
+					<span id="hl-off" class="hint" hidden>Large body — syntax colours off</span>
 					<label id="pretty-wrap" class="check">
 						<input type="checkbox" id="pretty-toggle" checked /> Prettify JSON
 					</label>
@@ -732,14 +844,14 @@
 
 				<div class="sub" id="urlencoded-pane">
 					<div id="urlencoded-rows"></div>
-					<button class="ghost add" id="add-urlencoded">+ Add field</button>
+					<button class="ghost" id="add-urlencoded">+ Add field</button>
 				</div>
 
 				<div class="sub" id="multipart-pane">
 					<div id="mp-rows"></div>
-					<button class="ghost add" id="add-mp">+ Add field</button>
+					<button class="ghost" id="add-mp">+ Add field</button>
 					<div id="mp-files"></div>
-					<button class="ghost add" id="add-mp-file">+ Add file</button>
+					<button class="ghost" id="add-mp-file">+ Add file</button>
 				</div>
 
 				<div class="sub" id="binary-pane">
@@ -750,7 +862,7 @@
 				</div>
 			</div>
 
-			<div class="pane" id="pane-auth" role="tabpanel" tabindex="0" aria-label="Auth">
+			<div class="pane" id="pane-auth" role="tabpanel" role="tabpanel" aria-label="Auth">
 				<div class="row">
 					<label class="sr-only" for="auth-type">Auth type</label>
 					<select id="auth-type" class="compact">
@@ -761,7 +873,7 @@
 						<option value="oauth2-cc">OAuth2 — client credentials</option>
 						<option value="oauth2-ac">OAuth2 — authorization code</option>
 					</select>
-					<span id="auth-bad" class="chip bad" hidden>Incomplete — request will send without auth</span>
+					<span id="auth-bad" class="chip bad" role="status" hidden>Incomplete — request will send without auth</span>
 					<span id="auth-hint" class="hint"></span>
 				</div>
 
@@ -805,7 +917,7 @@
 				</div>
 			</div>
 
-			<div class="pane" id="pane-code" role="tabpanel" tabindex="0" aria-label="Code snippet">
+			<div class="pane" id="pane-code" role="tabpanel" role="tabpanel" aria-label="Code snippet">
 				<div class="row">
 					<label class="sr-only" for="snippet-lang">Language</label>
 					<select id="snippet-lang" class="compact">
@@ -818,10 +930,10 @@
 					<span class="spacer"></span>
 					<button class="secondary" id="snippet-copy" title="Copy to clipboard">Copy</button>
 				</div>
-				<pre id="snippet-out" class="snippet"></pre>
+				<pre id="snippet-out" class="snippet" tabindex="0" aria-label="Generated code snippet"></pre>
 			</div>
 
-			<div class="pane" id="pane-scripts" role="tabpanel" tabindex="0" aria-label="Scripts">
+			<div class="pane" id="pane-scripts" role="tabpanel" role="tabpanel" aria-label="Scripts">
 				<label class="field-label" for="pre-script">Pre-request <span class="hint">runs first · may change <code>request</code> and <code>vars</code></span></label>
 				<textarea id="pre-script" rows="5" spellcheck="false" placeholder="// e.g. request.headers['X-Trace'] = 'abc';"></textarea>
 				<label class="field-label" for="test-script">Tests <span class="hint">run after the response · <code>expect(response.status).to.equal(200)</code></span></label>
@@ -829,7 +941,7 @@
 				<div id="script-results" class="results"></div>
 			</div>
 
-			<div class="pane" id="pane-socket" role="tabpanel" tabindex="0" aria-label="Socket">
+			<div class="pane" id="pane-socket" role="tabpanel" role="tabpanel" aria-label="Socket">
 				<div class="row">
 					<label class="sr-only" for="socket-mode">Protocol</label>
 					<select id="socket-mode" class="compact" aria-label="Protocol">
@@ -837,15 +949,15 @@
 						<option value="sse">Server-Sent Events</option>
 					</select>
 					<input id="socket-url" placeholder="ws://localhost:3000/socket" spellcheck="false" aria-label="Socket URL" />
-					<button id="socket-toggle">Connect</button>
+					<button id="socket-toggle" class="secondary">Connect</button>
 					<button id="socket-reconnect" class="secondary" hidden>Reconnect</button>
-					<span id="socket-state" class="hint" aria-live="polite"></span>
+					<span id="socket-state" class="badge" hidden></span>
 				</div>
 				<div class="row" id="socket-send-row" hidden>
 					<input id="socket-message" placeholder="Message to send ({{vars}} work)" spellcheck="false" aria-label="Message" />
 					<button class="secondary" id="socket-send">Send</button>
 				</div>
-				<pre id="socket-log" class="snippet"></pre>
+				<pre id="socket-log" class="snippet" tabindex="0" role="log" aria-label="Socket log"></pre>
 			</div>
 		</div>
 	</section>
@@ -854,9 +966,10 @@
 		aria-valuemin="120"></div>
 
 	<section id="response" aria-label="Response">
+		<div id="send-progress" class="progress" hidden aria-hidden="true"></div>
 		<div id="empty-state" class="empty">
 			<strong>Send a request to see the response</strong>
-			<span>Paste a URL above and press <kbd>Enter</kbd>. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> sends from anywhere in the pane.</span>
+			<span>Paste a URL above and press <kbd>Enter</kbd>. <kbd id="empty-mod">Ctrl</kbd>+<kbd>Enter</kbd> sends from anywhere.</span>
 			<span>Use <code>{{name}}</code> for environment variables, <code>:id</code> for path values, and save requests into a collection to keep them.</span>
 		</div>
 
@@ -871,6 +984,7 @@
 		     is unreliable for screen readers -->
 		<p id="status-live" class="sr-only" aria-live="polite"></p>
 		<p id="scripts-live" class="sr-only" aria-live="polite"></p>
+		<p id="socket-live" class="sr-only" aria-live="polite"></p>
 
 		<div class="response-bar" id="res-tabs" hidden>
 			<span class="strip-label" aria-hidden="true">Response</span>
@@ -905,6 +1019,8 @@
 
 <script>
 	const vscode = acquireVsCodeApi();
+	// the handlers accept metaKey too; the labels should not tell a Mac user to press Ctrl
+	const MOD = /^Mac|iP(hone|ad)/.test(navigator.platform || '') ? 'Cmd' : 'Ctrl';
 	const $ = (id) => document.getElementById(id);
 	/** Unsaved edits. Declared here because the state-restore block below can set it. */
 	let dirty = false;
@@ -984,6 +1100,8 @@
 		envs.names.forEach((name) => add(name, name));
 		add(NEW_ENV, '+ New environment…');
 		select.value = envs.active;
+		// the select is the only place the active env is shown, so the tooltip has to follow it
+		refreshChrome();
 	}
 
 	$('env').addEventListener('change', () => {
@@ -997,14 +1115,26 @@
 	function addKvRow(containerId, k = '', v = '', kp = 'Header', vp = 'Value') {
 		const row = document.createElement('div');
 		row.className = 'kv-row';
+		// numbered, not repeated: a three-row grid must not announce "Header name" three times
+		const n = $(containerId).childElementCount + 1;
 		row.innerHTML =
-			'<input class="hk" placeholder="' + kp + '" spellcheck="false" aria-label="' + kp + ' name" />' +
-			'<input class="hv" placeholder="' + vp + '" spellcheck="false" aria-label="' + kp + ' value" />' +
+			'<input class="hk" placeholder="' + kp + '" spellcheck="false" aria-label="' + kp + ' name, row ' + n + '" />' +
+			'<input class="hv" placeholder="' + vp + '" spellcheck="false" aria-label="' + kp + ' value, row ' + n + '" />' +
 			'<button class="icon hdel" title="Remove ' + kp.toLowerCase() + '" aria-label="Remove ' + kp.toLowerCase() + '">' +
 			'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg></button>';
 		row.querySelector('.hk').value = k;
 		row.querySelector('.hv').value = v;
-		row.querySelector('.hdel').addEventListener('click', () => { row.remove(); persist(); refreshChrome(); });
+		row.querySelector('.hdel').addEventListener('click', () => {
+			row.remove();
+			// renumber: "row 3" on the only remaining row is worse than no number at all
+			[...$(containerId).children].forEach((el, i) => {
+				const kp2 = el.querySelector('.hk');
+				const hv2 = el.querySelector('.hv');
+				if (kp2) { kp2.setAttribute('aria-label', kp + ' name, row ' + (i + 1)); }
+				if (hv2) { hv2.setAttribute('aria-label', kp + ' value, row ' + (i + 1)); }
+			});
+			mutate();
+		});
 		$(containerId).appendChild(row);
 		return row;
 	}
@@ -1032,8 +1162,14 @@
 	}
 
 	function collectHeaders() {
-		const out = {};
-		collectKv('headers').forEach((f) => { out[f.key] = f.value.trim(); });
+		// null prototype: `__proto__` is a legitimate header name and must not vanish into the prototype
+		const out = Object.create(null);
+		collectKv('headers').forEach((f) => {
+			const value = f.value.trim();
+			// `fetch` joins repeated names with ", ", so the panel joins them too instead of dropping
+			// the first row while the chip claims the values are joined
+			out[f.key] = out[f.key] === undefined ? value : out[f.key] + ', ' + value;
+		});
 		return out;
 	}
 
@@ -1042,16 +1178,6 @@
 	$('add-mp').addEventListener('click', () => addKvRow('mp-rows', '', '', 'Field', 'Value'));
 
 	// --- body type ---
-	const CT_HINT = {
-		none: '',
-		json: 'Content-Type: application/json',
-		text: 'Content-Type: text/plain',
-		xml: 'Content-Type: application/xml',
-		html: 'Content-Type: text/html',
-		urlencoded: 'Content-Type: application/x-www-form-urlencoded',
-		multipart: 'Content-Type: multipart/form-data (boundary auto)',
-		binary: 'Content-Type: application/octet-stream',
-	};
 	const RAW_TYPES = ['json', 'text', 'xml', 'html'];
 	const PLACEHOLDER = {
 		json: '{ "key": "value" }',
@@ -1062,15 +1188,20 @@
 
 	function bodyType() { return $('body-type').value; }
 
+	/** One owner for "N thing(s)": every count in the panel goes through here. */
+	const count = (n, one, many) => n + ' ' + (n === 1 ? one : (many || one + 's'));
+
 	// ---------- JSON editor: highlighting, auto-pairing, auto-format ----------
-	const HL_LIMIT = 200000; // ponytail: one scan per keystroke; past 200 KB colouring costs more than it gives
+	// ponytail: one full scan + one innerHTML per keystroke, measured in the *visible* Body pane:
+	// ~20 ms at 11 KB and ~50 ms at 28 KB (a hidden pane under-reports by 4× because it never lays
+	// out). 20 KB is the last size that keeps a keystroke near one frame; past it the text stays
+	// plain, the pane says so, and pairing/formatting still work.
+	const HL_LIMIT = 20000;
 	const PAIRS = { '{': '}', '[': ']', '"': '"' };
 	const INDENT = '  ';
 	const CLOSERS = '}"]';
 	const JSON_TOKEN = /"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\b(?:true|false|null)\b|[{}\[\],:]/g;
 	const PUNCT = /^[{}\[\],:]$/;
-
-	const escapeHtml = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 
 	/** A string token is a key when the next non-space character is a colon. */
 	function isKeyAt(src, end) {
@@ -1086,16 +1217,16 @@
 		let m;
 		JSON_TOKEN.lastIndex = 0;
 		while ((m = JSON_TOKEN.exec(src))) {
-			if (m.index > last) { out += escapeHtml(src.slice(last, m.index)); }
+			if (m.index > last) { out += esc(src.slice(last, m.index)); }
 			const tok = m[0];
 			let cls = 't-p';
 			if (tok[0] === '"') { cls = isKeyAt(src, m.index + tok.length) ? 't-k' : 't-s'; }
 			else if (tok === 'true' || tok === 'false' || tok === 'null') { cls = 't-l'; }
 			else if (!PUNCT.test(tok)) { cls = 't-n'; }
-			out += '<span class="' + cls + '">' + escapeHtml(tok) + '</span>';
+			out += '<span class="' + cls + '">' + esc(tok) + '</span>';
 			last = m.index + tok.length;
 		}
-		return out + escapeHtml(src.slice(last));
+		return out + esc(src.slice(last));
 	}
 
 	function paintBody() {
@@ -1107,6 +1238,8 @@
 		// a trailing newline has no line box of its own, so both layers get one appended
 		const tail = text.endsWith('\n') ? '\n' : '';
 		// past the limit there is nothing to colour: textContent is one text node, no HTML parse
+		// colouring stops at the budget: say so once instead of silently turning the text grey
+		$('hl-off').hidden = text.length <= HL_LIMIT;
 		if (text.length > HL_LIMIT) { code.textContent = text + tail; }
 		else { code.innerHTML = highlightJson(text) + tail; }
 		syncHlScroll();
@@ -1241,7 +1374,7 @@
 	function formatJson() {
 		const ta = $('body');
 		const text = ta.value.trim();
-		if (!text) { $('json-bad').hidden = true; return false; }
+		if (!text) { $('json-bad').hidden = true; $('body').removeAttribute('aria-invalid'); return false; }
 		let parsed;
 		let pretty;
 		try {
@@ -1249,11 +1382,18 @@
 			pretty = JSON.stringify(parsed, null, INDENT);
 		} catch {
 			$('json-bad').hidden = false;
+			ta.setAttribute('aria-invalid', 'true');
+			announce('Invalid JSON — not formatted');
 			return false;
 		}
 		$('json-bad').hidden = true;
+		ta.removeAttribute('aria-invalid');
 		if (pretty === ta.value) { return true; }
-		if (stripSpace(text) !== JSON.stringify(parsed)) { return true; }
+		if (stripSpace(text) !== JSON.stringify(parsed)) {
+			// reformatting would rewrite the payload: a number past 2^53, a duplicate key, 1e400
+			showNotice('Format skipped — it would change this body (a number too large, or a duplicate key).', 'warn');
+			return true;
+		}
 		const caret = safeCaret(pretty, ta.selectionStart);
 		if (document.activeElement === ta) {
 			// an explicit format is one undoable edit and must not scroll the editor
@@ -1296,18 +1436,66 @@
 	$('body').addEventListener('scroll', syncHlScroll);
 	$('body').addEventListener('input', paintBody);
 
+	/** Mirrors `BODYLESS` in src/http.ts: these methods never carry a body on the wire. */
+	const BODYLESS_METHODS = ['GET', 'HEAD', 'DELETE', 'OPTIONS'];
+	const CT_DEFAULT = {
+		json: 'application/json',
+		text: 'text/plain',
+		xml: 'application/xml',
+		html: 'text/html',
+		urlencoded: 'application/x-www-form-urlencoded',
+		multipart: 'multipart/form-data',
+		binary: 'application/octet-stream',
+	};
+
+	/**
+	 * What the request will actually send. A user-set Content-Type wins, a bodyless method sends
+	 * nothing at all, and the automatic value is labelled as automatic — the old hint printed
+	 * "Content-Type: application/json" for a JSON body on a GET, which the wire never carried.
+	 */
+	function syncCtHint() {
+		const t = bodyType();
+		const hint = $('ct-hint');
+		const method = String($('method').value || 'GET').toUpperCase();
+		// header names are case-insensitive on the wire, so the hint must be too
+		const headers = collectHeaders();
+		const custom = Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type').map((k) => headers[k])[0];
+		if (t === 'none') { hint.textContent = ''; hint.classList.remove('warn-text'); return; }
+		const body = collectBody();
+		const hasBody = body.type !== 'none';
+		// an empty body sends nothing, so the hint names the type without claiming the wire carries it
+		if (!hasBody) {
+			hint.textContent = 'Will send ' + (CT_DEFAULT[t] || '') + ' once the body has content';
+			hint.classList.remove('warn-text');
+			return;
+		}
+		if (BODYLESS_METHODS.includes(method)) {
+			hint.textContent = method + ' sends no body — this body will not be sent';
+			hint.classList.add('warn-text');
+			return;
+		}
+		hint.classList.remove('warn-text');
+		if (t === 'multipart') {
+			// the host deletes any Content-Type on a FormData body so fetch can own the boundary
+			hint.textContent = 'Sends multipart/form-data — the host sets the boundary; a Content-Type header is dropped';
+			return;
+		}
+		hint.textContent = custom ? 'Sends Content-Type: ' + custom + ' (your header)' : 'Sends ' + (CT_DEFAULT[t] || '');
+	}
+
 	function syncBodyPanes() {
 		const t = bodyType();
-		$('body').hidden = !RAW_TYPES.includes(t);
-		$('body-editor').hidden = $('body').hidden;
+		// the wrapper hides the field: one hiding mechanism, not two
+		$('body-editor').hidden = $('body').hidden = !RAW_TYPES.includes(t);
 		paintBody();
 		$('urlencoded-pane').classList.toggle('active', t === 'urlencoded');
 		$('multipart-pane').classList.toggle('active', t === 'multipart');
 		$('binary-pane').classList.toggle('active', t === 'binary');
 		$('pretty-wrap').hidden = t !== 'json';
-		$('ct-hint').textContent = CT_HINT[t] || '';
+		syncCtHint();
 		$('body').placeholder = PLACEHOLDER[t] || '';
 		$('json-bad').hidden = true;
+		$('body').removeAttribute('aria-invalid');
 	}
 
 	$('body-type').addEventListener('change', () => { syncBodyPanes(); persist(); });
@@ -1346,22 +1534,22 @@
 		row.innerHTML =
 			'<input class="hk" placeholder="Field" spellcheck="false" aria-label="File field name" />' +
 			'<button class="secondary pick">Choose file…</button>' +
-			'<span class="fname">No file</span>' +
+			'<span class="fname">No file selected</span>' +
 			'<button class="icon hdel" title="Remove file" aria-label="Remove file">' +
 			'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg></button>';
 		row.querySelector('.hk').value = f.key || '';
 		row.dataset.path = f.path || '';
-		row.querySelector('.fname').textContent = f.name || 'No file';
+		row.querySelector('.fname').textContent = f.name || 'No file selected';
 		row.querySelector('.fname').title = f.path || '';
 		row.querySelector('.pick').addEventListener('click', () =>
 			pickFile((picked) => {
 				row.dataset.path = picked.path;
 				row.querySelector('.fname').textContent = picked.name;
 				row.querySelector('.fname').title = picked.path;
-				persist();
+				mutate();
 			})
 		);
-		row.querySelector('.hdel').addEventListener('click', () => { row.remove(); persist(); refreshChrome(); });
+		row.querySelector('.hdel').addEventListener('click', () => { row.remove(); mutate(); });
 		$('mp-files').appendChild(row);
 		return row;
 	}
@@ -1400,38 +1588,69 @@
 
 	// --- sockets (WebSocket / SSE are owned by the extension host) ---
 	let socketOpen = false;
+	let socketOpening = false;
 	let socketSeenOpen = false;
 
 	function socketMode() { return $('socket-mode').value; }
 
+	// ponytail: one span per frame, oldest dropped; a live session log is not an archive
+	const SOCKET_LINE_CAP = 400;
+
 	function socketLog(text, kind) {
 		const line = document.createElement('span');
 		line.className = 'line' + (kind ? ' ' + kind : '');
-		line.textContent = text + String.fromCharCode(10);
-		$('socket-log').appendChild(line);
-		$('socket-log').scrollTop = $('socket-log').scrollHeight;
+		line.textContent = text + '\n';
+		const log = $('socket-log');
+		// follow the stream only when the reader is already at the bottom
+		const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 24;
+		log.appendChild(line);
+		while (log.childElementCount > SOCKET_LINE_CAP) { log.firstElementChild.remove(); }
+		if (atBottom) { log.scrollTop = log.scrollHeight; }
 	}
 
 	function socketState(open, label, connecting, failed) {
 		socketOpen = open;
+		socketOpening = !!connecting;
 		if (open) { socketSeenOpen = true; }
 		$('socket-toggle').textContent = connecting ? 'Cancel' : open ? 'Disconnect' : 'Connect';
 		// never `disabled`: a hang would leave no way out and the focused control would be removed
-		$('socket-state').textContent = connecting ? 'opening a connection…' : open ? (socketMode() === 'sse' ? 'streaming' : 'connected') : (failed || socketSeenOpen) ? 'disconnected' : '';
+		const state = $('socket-state');
+		const text = connecting ? 'Connecting…' : open ? (socketMode() === 'sse' ? 'Streaming' : 'Connected') : (failed || socketSeenOpen) ? 'Disconnected' : '';
+		state.textContent = failed ? 'Connection failed' : text;
+		// announce outside the visual row: unhiding and filling one node in a task is unreliable for AT
+		$('socket-live').textContent = state.textContent;
+		state.hidden = !state.textContent;
+		// the connection verdict is a headline of this pane, so it wears the same badge as the HTTP one;
+		// a normal disconnect is not a failure and must not be painted red
+		state.className = 'badge ' + (connecting ? 'warn' : open ? 'ok' : failed ? 'err' : 'neutral');
 		$('socket-reconnect').hidden = !(failed || socketSeenOpen) || open || connecting;
 		// two buttons that both mean "open a connection" is one too many
-		$('socket-toggle').hidden = !open && !connecting && (failed || socketSeenOpen);
+		// Exactly one way in must always be reachable: Reconnect when it is offered and we are idle,
+		// otherwise the toggle. Cancelling a connect attempt used to hide both.
+		const reconnectOffered = !$('socket-reconnect').hidden;
+		hideKeepingFocus($('socket-toggle'), reconnectOffered ? $('socket-reconnect') : $('socket-url'));
+		$('socket-toggle').hidden = reconnectOffered && !open && !connecting;
+		// the protocol belongs to the open connection
+		$('socket-mode').disabled = socketOpen || socketOpening;
 		setDot('socket-dot', open);
 		$('socket-send-row').hidden = !(open && socketMode() === 'ws');
-		if (label) { socketLog(label, 'system'); }
-		if (failed && label) { $('socket-state').textContent = 'connection failed'; }
+		if (label) { socketLog(label, failed ? 'error' : 'system'); }
 	}
 
-	$('socket-reconnect').addEventListener('click', () => {
+	/** The only way a connection starts: Connect and Reconnect end up here, so they cannot disagree. */
+	function openSocket() {
+		const url = $('socket-url').value.trim();
+		if (!url) {
+			$('socket-url').focus();
+			showNotice('Enter a WebSocket or SSE URL first.', 'warn');
+			return;
+		}
 		$('socket-log').textContent = '';
 		socketState(false, '', true);
-		vscode.postMessage({ type: 'socketConnect', mode: socketMode(), url: $('socket-url').value.trim() });
-	});
+		vscode.postMessage({ type: 'socketConnect', mode: socketMode(), url });
+	}
+
+	$('socket-reconnect').addEventListener('click', openSocket);
 
 	$('socket-toggle').addEventListener('click', () => {
 		// clicking while a connection is still opening cancels it
@@ -1445,15 +1664,7 @@
 			socketState(false, '— disconnected');
 			return;
 		}
-		$('socket-log').textContent = '';
-		const url = $('socket-url').value.trim();
-		if (!url) {
-			$('socket-url').focus();
-			showNotice('Enter a WebSocket or SSE URL first.', 'warn');
-			return;
-		}
-		socketState(false, '', true);
-		vscode.postMessage({ type: 'socketConnect', mode: socketMode(), url });
+		openSocket();
 	});
 
 	$('socket-send').addEventListener('click', () => {
@@ -1465,6 +1676,9 @@
 	});
 
 	$('socket-mode').addEventListener('change', () => {
+		// the protocol is part of the live connection: switching it mid-stream would relabel an open
+		// WebSocket as an SSE stream, so the select is locked while one is open or opening
+		$('socket-mode').disabled = socketOpen || socketOpening;
 		$('socket-send-row').hidden = !(socketOpen && socketMode() === 'ws');
 		$('socket-url').placeholder = socketMode() === 'ws' ? 'ws://localhost:3000/socket' : 'http://localhost:3000/events';
 	});
@@ -1490,7 +1704,8 @@
 		if (!text) { return; }
 		vscode.postMessage({ type: 'copy', text });
 		// confirm where the user is looking, not only in the status bar
-		$('snippet-status').textContent = 'copied';
+		$('snippet-status').textContent = 'Copied';
+		announce('Copied the code snippet');
 		clearTimeout(snippetTimer);
 		snippetTimer = setTimeout(() => { $('snippet-status').textContent = ''; }, 1500);
 	});
@@ -1607,6 +1822,11 @@
 			showNotice('Enter a URL first — it must start with http:// or https://', 'warn');
 			return;
 		}
+		if (!/^https?:/i.test(url) && !url.startsWith('{{')) {
+			$('url').focus();
+			showNotice('That URL has no scheme — start it with http:// or https://', 'warn');
+			return;
+		}
 		startSend();
 		vscode.postMessage({ type: 'send', request: collectRequest() });
 	});
@@ -1615,11 +1835,26 @@
 
 	// --- save to collection (the extension asks for a snapshot, then prompts for a target) ---
 	$('save').addEventListener('click', () => {
+		restoredUnsaved = false;
 		vscode.postMessage({ type: 'save', request: collectRequest() });
 	});
 
 	$('url').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') $('send').click();
+		// Enter sends; Ctrl/Cmd+Enter is the document-level shortcut and must not fire twice, and
+		// Enter that commits an IME composition is not a send
+		if (e.isComposing) { return; }
+		if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey) { $('send').click(); }
+	});
+	// Enter in the socket fields means what Enter means everywhere else in this panel
+	$('socket-url').addEventListener('keydown', (e) => {
+		if (e.key !== 'Enter' || e.isComposing) { return; }
+		e.preventDefault();
+		($('socket-reconnect').hidden ? $('socket-toggle') : $('socket-reconnect')).click();
+	});
+	$('socket-message').addEventListener('keydown', (e) => {
+		if (e.key !== 'Enter' || e.shiftKey || e.isComposing) { return; }
+		e.preventDefault();
+		$('socket-send').click();
 	});
 	refreshChrome();
 
@@ -1634,7 +1869,12 @@
 		}
 		if (msg.type === 'load') applyRequest(msg.request);
 		if (msg.type === 'envs') renderEnvs(msg);
-		if (msg.type === 'requestSnapshot') vscode.postMessage({ type: 'save', request: collectRequest() });
+		if (msg.type === 'requestSnapshot') {
+			// a save from the command palette or a keybinding is the same save: the panel is no longer
+			// "restored but unsaved", so the host's dirty:false must be allowed to clear the dot
+			restoredUnsaved = false;
+			vscode.postMessage({ type: 'save', request: collectRequest() });
+		}
 		if (msg.type === 'exportCurl') vscode.postMessage({ type: 'curl', request: collectRequest() });
 		if (msg.type === 'socketState') {
 			const failed = msg.state !== 'open' && !!msg.error;
@@ -1647,10 +1887,11 @@
 		}
 		if (msg.type === 'identity') {
 			$('identity-name').textContent = msg.name || 'Untitled request';
-			$('identity-name').title = msg.path || 'Not saved yet — press Ctrl+S to keep it';
+			$('identity-name').title = msg.path || 'Not saved yet — press ' + MOD + '+S to keep it';
 			filePath = msg.path || '';
-			// the host says whether this identity came from a save (clean) or a restore (still dirty)
-			if (msg.dirty) { markDirty(); } else { markClean(); }
+			// the host says whether this identity came from a save (clean) or a restore (still dirty);
+			// it cannot clear a dirty flag the webview set because the restored state is unsaved
+			if (msg.dirty) { markDirty(); } else if (!restoredUnsaved) { markClean(); }
 			persist();
 		}
 		if (msg.type === 'notice') {
@@ -1708,12 +1949,20 @@
 			$('body-type').value = 'none';
 		}
 		markClean();
+		restoredUnsaved = false;
 		lastScript = null;
 		if ($('status-scripts')) { $('status-scripts').innerHTML = ''; }
+		// whatever the strip said belonged to the request that just left the editor
+		$('status').hidden = true;
+		$('status').innerHTML = '';
+		$('stale-banner').hidden = true;
+		$('context-line').hidden = true;
+		$('status-live').textContent = '';
+		// with no response to keep, the response section goes back to its first-run card
+		$('empty-state').hidden = !!lastResponse;
 		if (lastResponse) {
 			// the response pane still holds the previous request's body; say so rather than
 			// leaving Copy/Save pointing at data the identity line no longer describes
-			$('status').hidden = true;
 			$('stale-banner').hidden = false;
 			$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — you loaded another request.';
 		}
@@ -1722,6 +1971,7 @@
 		$('test-script').value = req.test || '';
 		$('script-results').innerHTML = '';
 		syncBodyPanes();
+		syncContextLine();
 		refreshChrome();
 		persist();
 		if ($('pane-code').classList.contains('active')) { requestSnippet(); }
@@ -1742,18 +1992,20 @@
 		if (lastScript.error) {
 			const chip = document.createElement('span');
 			chip.className = 'badge err';
-			chip.textContent = 'script error';
+			chip.textContent = 'Script error';
 			chip.title = lastScript.error;
 			slot.appendChild(chip);
 			return;
 		}
 		if (!assertions.length) { return; }
+		// with the Scripts pane open its badge already states the count: do not print it twice
 		const chip = document.createElement('span');
 		chip.className = 'badge ' + (failed.length ? 'err' : 'ok');
-		chip.textContent = failed.length ? failed.length + ' failed' : 'tests passed';
+		chip.textContent = failed.length ? count(failed.length, 'assertion failed', 'assertions failed') : count(assertions.length, 'assertion') + ' passed';
+		if (paneOpen) { chip.hidden = true; }
 		chip.title = failed.length
 			? failed.map((f) => f.name + (f.message ? ': ' + f.message : '')).join(String.fromCharCode(10))
-			: assertions.length + ' assertions passed';
+			: count(assertions.length, 'assertion') + ' passed';
 		slot.appendChild(chip);
 		if (failed.length && !paneOpen) {
 			// the first failure is the useful one; the rest stay in the Scripts tab
@@ -1773,8 +2025,8 @@
 		$('scripts-live').textContent = result
 			? (result.error ? 'Script error: ' + result.error
 				: ((result.assertions || []).filter((a) => !a.passed).length
-					? (result.assertions || []).filter((a) => !a.passed).length + ' of ' + (result.assertions || []).length + ' assertions failed'
-					: (result.assertions || []).length + ' assertions passed'))
+					? (result.assertions || []).filter((a) => !a.passed).length + ' of ' + count((result.assertions || []).length, 'assertion') + ' failed'
+					: count((result.assertions || []).length, 'assertion') + ' passed'))
 			: '';
 		if (!result) { return; }
 		const assertions = result.assertions || [];
@@ -1792,8 +2044,8 @@
 			const badge = document.createElement('span');
 			badge.className = 'badge ' + (failed.length ? 'err' : 'ok');
 			badge.textContent = failed.length
-				? failed.length + ' of ' + assertions.length + ' assertions failed'
-				: assertions.length + ' assertions passed';
+				? failed.length + ' of ' + count(assertions.length, 'assertion') + ' failed'
+				: count(assertions.length, 'assertion') + ' passed';
 			box.appendChild(badge);
 		}
 		for (const failure of failed) {
@@ -1808,7 +2060,7 @@
 			const scope = document.createElement('span');
 			scope.className = 'hint';
 			scope.title = scopeFiles.join(String.fromCharCode(10));
-			scope.textContent = 'also ran ' + scopeFiles.length + ' scoped ' + (scopeFiles.length === 1 ? 'script' : 'scripts');
+			scope.textContent = 'also ran ' + count(scopeFiles.length, 'scoped script');
 			box.appendChild(scope);
 		}
 		if (result.logs && result.logs.length) {
@@ -1821,10 +2073,6 @@
 			logs.appendChild(pre);
 			box.appendChild(logs);
 		}
-	}
-
-	function pretty(text) {
-		try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
 	}
 
 	// --- splitter: drag or arrow keys; remembered per workspace ---
@@ -1842,8 +2090,23 @@
 			handle.setAttribute('aria-valuenow', String(height));
 			handle.setAttribute('aria-valuetext', `Request pane height ${height} pixels`);
 		};
+		/**
+		 * The ceiling has to leave the response its minimum, or the seam is dragged past the bottom of
+		 * the window and the splitter itself goes off-screen (a state that then survives a reload).
+		 * So: whatever the viewport allows, minus the composer's own top, minus the response's
+		 * min-height (90) and the splitter and its gap.
+		 */
+		const maxHeight = () => {
+			const ratioCap = Math.round(window.innerHeight * paneMaxRatio());
+			// A visible notice sits in flow above the pane and steals height from the response: it is
+			// part of the overhead, or the body ends up below the fold with no way to scroll.
+			const notice = $('notice').hidden ? 0 : Math.round($('notice').getBoundingClientRect().height) + 8;
+			const overhead = 90 + 14 + 8 + 8 + notice; // response min + splitter + its two gaps + notice
+			const room = Math.round(window.innerHeight - $('request-pane').getBoundingClientRect().top - overhead);
+			return Math.max(120, Math.min(ratioCap, room));
+		};
 		const apply = (px) => {
-			const max = Math.round(window.innerHeight * paneMaxRatio());
+			const max = maxHeight();
 			const value = Math.max(120, Math.min(max, Math.round(px)));
 			root.style.setProperty('--composer-max', value + 'px');
 			handle.setAttribute('aria-valuemax', String(max));
@@ -1851,15 +2114,20 @@
 		};
 
 		// advertised maximum exists before the first drag, so the separator is never value-less
-		handle.setAttribute('aria-valuemax', String(Math.round(window.innerHeight * paneMaxRatio())));
+		handle.setAttribute('aria-valuemax', String(maxHeight()));
 		const saved = vscode.getState();
 		if (saved && saved.composerMax) { apply(saved.composerMax); }
 		describe();
 
 		let moved = false;
+		let dragFrom = 0;
+		let dragValue = 0;
 		handle.addEventListener('pointerdown', (e) => {
 			dragging = true;
 			moved = false;
+			// read the geometry once, at grab time: a rect read per pointermove forces a layout
+			dragFrom = e.clientY;
+			dragValue = requestHeight();
 			handle.setPointerCapture(e.pointerId);
 			handle.dataset.drag = 'true';
 			document.body.classList.add('splitter-drag');
@@ -1867,9 +2135,8 @@
 		});
 		handle.addEventListener('pointermove', (e) => {
 			if (!dragging) { return; }
-			// move the seam by the pointer delta from its own top, so a wrapped header cannot skew it
 			moved = true;
-			apply(requestHeight() + (e.clientY - handle.getBoundingClientRect().top));
+			apply(dragValue + (e.clientY - dragFrom));
 			describe();
 		});
 		const stop = () => {
@@ -1885,18 +2152,32 @@
 			}
 		};
 		const refresh = () => {
-			handle.setAttribute('aria-valuemax', String(Math.round(window.innerHeight * paneMaxRatio())));
+			// a shorter window must pull the seam back in, not just relabel it
+			const max = maxHeight();
+			if (requestHeight() > max) { apply(max); }
+			handle.setAttribute('aria-valuemax', String(max));
 			describe();
 		};
 		window.addEventListener('resize', refresh);
-		if (typeof ResizeObserver === 'function') { new ResizeObserver(refresh).observe($('request-pane')); }
+		// coalesce: the callback writes --composer-max onto the element it observes, and doing that
+		// inside the same frame is what produced "ResizeObserver loop completed with undelivered…"
+		let refreshQueued = false;
+		const queueRefresh = () => {
+			if (refreshQueued) { return; }
+			refreshQueued = true;
+			requestAnimationFrame(() => { refreshQueued = false; refresh(); });
+		};
+		if (typeof ResizeObserver === 'function') { new ResizeObserver(queueRefresh).observe($('request-pane')); }
 		handle.addEventListener('pointerup', stop);
 		handle.addEventListener('pointercancel', stop);
 		handle.addEventListener('keydown', (e) => {
 			const step = e.shiftKey ? 48 : 16;
+			const resize = e.key === 'ArrowUp' || e.key === 'ArrowDown';
 			if (e.key === 'ArrowUp') { apply(requestHeight() - step); e.preventDefault(); }
 			if (e.key === 'ArrowDown') { apply(requestHeight() + step); e.preventDefault(); }
 			describe();
+			// Tab or Escape on the seam is not a resize: only an arrow key may persist a height
+			if (!resize) { return; }
 			const state = vscode.getState() || {};
 			vscode.setState({ ...state, composerMax: requestHeight() });
 		});
@@ -1904,17 +2185,30 @@
 
 	// --- notice strip: the panel's own status, instead of toast-only ---
 	let noticeTimer;
+	let persistTimer;
 	function showNotice(text, kind = 'info', sticky = false) {
 		const box = $('notice');
-		box.textContent = text;
+		$('notice-text').textContent = text;
 		box.dataset.kind = kind;
 		box.hidden = false;
 		$('notice-live').textContent = text;
+
 		clearTimeout(noticeTimer);
+		// an error is not a toast: it stays until the next notice or an explicit dismiss
+		if (kind === 'error') { sticky = true; }
+		// an error is dismissed by its own button; the strip is not a mystery click target
+		$('notice-close').hidden = !sticky;
 		if (!sticky) {
-			noticeTimer = setTimeout(() => { box.hidden = true; $('notice-live').textContent = ''; }, 6000);
+			noticeTimer = setTimeout(dismissNotice, 6000);
 		}
 	}
+
+	function dismissNotice() {
+		$('notice').hidden = true;
+		$('notice-close').hidden = true;
+		$('notice-live').textContent = '';
+	}
+	$('notice-close').addEventListener('click', dismissNotice);
 
 	// --- more menu ---
 	function closeMenu() {
@@ -1922,6 +2216,14 @@
 		$('more').setAttribute('aria-expanded', 'false');
 	}
 	const menuItems = () => [...$('more-menu').querySelectorAll('[role="menuitem"]')];
+
+	/** The next focusable control after `el`, skipping anything hidden. */
+	function focusAfter(el) {
+		const all = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
+			.filter((n) => !n.hidden && n.getAttribute('tabindex') !== '-1' && !n.closest('[hidden]'));
+		const next = all[all.indexOf(el) + 1] || all[0];
+		if (next) { next.focus(); }
+	}
 	$('more').addEventListener('click', (e) => {
 		e.stopPropagation();
 		const open = $('more-menu').hidden;
@@ -1929,6 +2231,14 @@
 		$('more').setAttribute('aria-expanded', String(open));
 		// a menu that opens should land the keyboard inside it, or the roles are a lie
 		if (open) { menuItems()[0].focus(); }
+	});
+	// a menu button opens with Down Arrow and lands on the first item (APG)
+	$('more').addEventListener('keydown', (e) => {
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }
+		e.preventDefault();
+		if ($('more-menu').hidden) { $('more').click(); }
+		const items = menuItems();
+		(e.key === 'ArrowDown' ? items[0] : items[items.length - 1]).focus();
 	});
 	// roving focus: arrows move, Home/End jump, Escape returns to the trigger
 	$('more-menu').addEventListener('keydown', (e) => {
@@ -1940,7 +2250,14 @@
 		else if (e.key === 'ArrowUp') { next = at <= 0 ? last : at - 1; }
 		else if (e.key === 'Home') { next = 0; }
 		else if (e.key === 'End') { next = last; }
-		else if (e.key === 'Tab') { closeMenu(); return; }
+		else if (e.key === 'Tab') {
+			// one press must leave the menu: close it and hand focus to the next control in document
+			// order (a tab stop on a hidden node is not one the browser can use)
+			e.preventDefault();
+			closeMenu();
+			focusAfter($('more'));
+			return;
+		}
 		else { return; }
 		e.preventDefault();
 		items[next].focus();
@@ -1981,6 +2298,8 @@
 
 	// --- keyboard: send, save, cancel, tab cycling ---
 	document.addEventListener('keydown', (e) => {
+		// a composing IME owns Enter and Escape; the panel's own handlers guard this, so must this one
+		if (e.isComposing) { return; }
 		const mod = e.ctrlKey || e.metaKey;
 		if (mod && e.key === 'Enter') {
 			e.preventDefault();
@@ -2004,8 +2323,8 @@
 		vscode.postMessage({ type: 'cancel' });
 		finishSend();
 		$('status').hidden = false;
-		$('status').innerHTML = '<span class="badge warn">cancelled</span>' +
-			'<span class="metric prose">the request was aborted — send again when ready.</span>';
+		$('status').innerHTML = '<span class="badge warn">Cancelled</span>' +
+			'<span class="metric prose">' + CANCEL_COPY + '</span>';
 		// whatever body is still on screen belongs to an earlier request: label it, like the error path
 		$('stale-banner').hidden = !lastResponse;
 		$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — this request was cancelled.';
@@ -2013,11 +2332,16 @@
 	}
 
 	function startSend() {
+		// a new request makes an old error stale
+		$('notice').hidden = true;
+		$('notice-live').textContent = '';
 		sending = true;
 		// keep Send in the layout and clickable: a native `disabled` attribute would make the
 		// Enter/Ctrl+Enter resend path inert, and a disabled control also loses focus
-		$('send').setAttribute('aria-disabled', 'true');
+		// `aria-busy` only: `aria-disabled` would tell AT the control cannot be used, and it can —
+		// pressing it again supersedes the in-flight request
 		$('send').setAttribute('aria-busy', 'true');
+		$('send').title = 'Send again to replace the in-flight request';
 		$('send-progress').hidden = false;
 		$('cancel').hidden = false;
 		announce('Sending request…');
@@ -2026,31 +2350,43 @@
 			$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — a new request is in flight.';
 		}
 		$('status').hidden = false;
-		$('status').innerHTML = '<span class="metric prose">sending…</span>';
+		$('status').innerHTML = '<span class="metric prose">Sending…</span>';
 		$('empty-state').hidden = true;
 	}
+	/** Hide a control without dropping the keyboard on the floor: hand focus to a stable neighbour. */
+	function hideKeepingFocus(el, next) {
+		if (document.activeElement === el && next && !next.hidden) { next.focus(); }
+		el.hidden = true;
+	}
+
 	function finishSend() {
 		sending = false;
-		$('send').removeAttribute('aria-disabled');
+		$('send').title = 'Send (' + MOD + '+Enter)';
 		$('send').removeAttribute('aria-busy');
 		$('send-progress').hidden = true;
-		$('cancel').hidden = true;
+		hideKeepingFocus($('cancel'), $('url'));
 	}
 
 	// --- response extras: timing breakdown, tree, search, copy, save ---
 	/** Every failure gets a next step, not just a reason. */
 	function recoveryHint(message) {
 		const text = String(message || '');
-		if (/Invalid URL/i.test(text)) { return text + ' — fix the method/URL row above.'; }
-		if (/timed out/i.test(text)) { return text + ' — the server did not answer in time; retry, or raise the asterisk.timeoutMs setting.'; }
-		if (/changed the request origin/i.test(text)) { return text + ' — remove the URL rewrite from the pre-request script.'; }
-		if (/Pre-request script|Script error|script threw/i.test(text)) { return text + ' — fix the script in the Scripts tab.'; }
-		if (/ENOTFOUND|EAI_AGAIN/i.test(text)) { return text + ' — the host name does not resolve; check the spelling, DNS, or a proxy.'; }
-		if (/ECONNREFUSED/i.test(text)) { return text + ' — nothing is listening on that port; start the server or fix the port.'; }
-		if (/CERT|TLS|SSL|self.signed|UNABLE_TO_VERIFY/i.test(text)) { return text + ' — the certificate is not trusted; use http:// locally or fix the cert.'; }
-		if (/fetch failed|network|ECONNRESET|socket hang up/i.test(text)) { return text + ' — check the host is running and the URL is right.'; }
-		if (/Cannot read file/i.test(text)) { return text + ' — re-pick the file in the Body tab.'; }
-		if (/OAuth|token/i.test(text)) { return text + ' — check the Auth tab (client id/secret, token URL).'; }
+		// The host's own "must start with …" clause says the same thing; replace it, never stack dashes.
+		// Every branch below appends through `withHint`, so one message never ends up with two dashes.
+		const withHint = (hint) => (text.includes(' — ') ? text : text + ' — ' + hint);
+		if (/Invalid URL/i.test(text)) {
+			const cleaned = text.replace(/\s*—\s*must start with[^—]*$/i, '');
+			return cleaned + ' — fix the method/URL row above.';
+		}
+		if (/timed out/i.test(text)) { return withHint('the server did not answer in time; retry, or raise the asterisk.timeoutMs setting.'); }
+		if (/changed the request origin/i.test(text)) { return withHint('remove the URL rewrite from the pre-request script.'); }
+		if (/Pre-request script|Script error|script threw/i.test(text)) { return withHint('fix the script in the Scripts tab.'); }
+		if (/ENOTFOUND|EAI_AGAIN/i.test(text)) { return withHint('the host name does not resolve; check the spelling, DNS, or a proxy.'); }
+		if (/ECONNREFUSED/i.test(text)) { return withHint('nothing is listening on that port; start the server or fix the port.'); }
+		if (/CERT|TLS|SSL|self.signed|UNABLE_TO_VERIFY/i.test(text)) { return withHint('the certificate is not trusted; use http:// locally or fix the cert.'); }
+		if (/fetch failed|network|ECONNRESET|socket hang up/i.test(text)) { return withHint('check the host is running and the URL is right.'); }
+		if (/Cannot read file/i.test(text)) { return withHint('re-pick the file in the Body tab.'); }
+		if (/OAuth|token/i.test(text)) { return withHint('check the Auth tab (client id/secret, token URL).'); }
 		return text;
 	}
 
@@ -2084,8 +2420,9 @@
 		if (value === null) { return 'null'; }
 		if (Array.isArray(value)) { return '[' + value.length + ']'; }
 		if (typeof value === 'object') { return '{' + Object.keys(value).length + '}'; }
-		const text = String(value);
-		return text.length > 60 ? text.slice(0, 60) + '…' : text;
+		// slice by code point: `slice(0, 60)` splits a surrogate pair and renders mojibake
+		const chars = [...String(value)];
+		return chars.length > 60 ? chars.slice(0, 60).join('') + '…' : String(value);
 	}
 
 	/** Build a collapsible tree with native <details> — no state to keep in sync. */
@@ -2107,7 +2444,7 @@
 				if (budget.left <= 0) {
 					const cut = document.createElement('div');
 					cut.className = 'ttype';
-					cut.textContent = '… truncated, response too large';
+					cut.textContent = '… tree stopped at ' + TREE_NODE_CAP + ' nodes — use the Body tab for the rest';
 					box.appendChild(cut);
 					break;
 				}
@@ -2119,39 +2456,75 @@
 		const leaf = document.createElement('div');
 		leaf.className = 'tleaf';
 		
-		leaf.innerHTML = (key === null ? '' : '<span class="tkey">' + esc(key) + '</span>: ') +
-			'<span class="tval">' + esc(treePreview(value)) + '</span> ' +
-			'<span class="ttype">' + treeType(value) + '</span>';
+		// a `null` leaf printed "null null" (preview + type); the type is only a hint when it differs
+		const typeName = treeType(value);
+		const preview = treePreview(value);
+		// two grid children in a two-track grid: key+value together, then the type. Four children
+		// (a key span, an anonymous ": ", a value span, a type span) wrapped onto two rows.
+		const kind = typeof value === 'number' ? ' tval-num' : (typeof value === 'boolean' || value === null) ? ' tval-lit' : '';
+		leaf.innerHTML = '<span>' + (key === null ? '' : '<span class="tkey">' + esc(key) + '</span>: ') +
+			'<span class="tval' + kind + '">' + esc(preview) + '</span></span>' +
+			(typeName === preview ? '' : '<span class="ttype">' + typeName + '</span>');
 		return leaf;
 	}
 
 	function renderTree() {
 		const out = $('tree-out');
 		out.innerHTML = '';
-		if (!lastResponse) { out.textContent = 'Send a request first.'; return; }
-		if (resJson === undefined) { out.textContent = 'Response body is not JSON.'; return; }
+		if (!lastResponse) { out.className = 'outs pane-note'; out.textContent = 'Send a request first.'; return; }
+		if (resJson === undefined) { out.className = 'outs pane-note'; out.textContent = 'This response body is not JSON — see the Body tab.'; return; }
+		out.className = 'outs';
 		out.appendChild(treeNodes(resJson, null, 0, { left: TREE_NODE_CAP }));
 	}
 
-	function clearSearch() {
+	/** The response body is a code surface: JSON gets the same token colours as the editor. */
+	function paintOutput() {
+		const out = $('body-out');
+		// the same budget as the editor: past it colouring costs more than it gives
+		if (resJson === undefined || resTruncated || resText.length > HL_LIMIT) { out.textContent = resText; return; }
+		out.innerHTML = highlightJson(resText);
+	}
+
+	function clearSearch(repaint = true) {
 		$('res-search').value = '';
 		$('res-count').textContent = '';
-		$('body-out').textContent = resText;
+		// repaint rather than write text: clearing a search must not strip the JSON colours
+		if (repaint) { paintOutput(); }
 	}
 
 	/** Literal, case-insensitive highlight. Works on escaped text, so nothing can inject markup. */
+	// ponytail: a 5 MB body as one pre-wrap text node cost 5.4 s of layout; above the cap the pane
+	// says so and Save still writes the whole thing
+	// measured: painting 100 KB costs ~112 ms and 700 KB ~763 ms, all of it on the UI thread, so the
+	// display budget is 400 KB; Save still writes the whole body
+	const DISPLAY_CAP = 400_000;
+	let resTruncated = false;
 	const SEARCH_BODY_CAP = 1_000_000;
+	const SEARCH_MARK_CAP = 500; // a <mark> is a reflow: 77k of them froze the pane
 
 	function applySearch() {
 		const query = $('res-search').value;
 		if (!query) { clearSearch(); return; }
+		if (resTruncated) {
+			// the pane holds a placeholder, not the body: "no matches" would be a lie
+			$('res-count').textContent = 'too large to search';
+			return;
+		}
 		if (resText.length > SEARCH_BODY_CAP) {
 			$('res-count').textContent = 'too large to highlight';
 			return;
 		}
 		// Match on the raw body and escape each slice: searching the escaped text would report
 		// hits on `amp`/`lt`/`quot` because every `&`, `<` and `"` turns into an entity.
-		const lower = resText.toLowerCase();
+		// toLowerCase can change length (İ, ß), so the haystack is built with an index map back into
+		// the original text; slicing by the lowercased index highlighted the wrong characters
+		let lower = '';
+		const map = [];
+		for (let i = 0; i < resText.length; i += 1) {
+			const low = resText[i].toLowerCase();
+			lower += low;
+			for (let k = 0; k < low.length; k += 1) { map.push(i); }
+		}
 		const needle = query.toLowerCase();
 		let out = '';
 		let at = 0;
@@ -2159,13 +2532,22 @@
 		for (;;) {
 			const found = lower.indexOf(needle, at);
 			if (found === -1) { break; }
-			out += esc(resText.slice(at, found)) + '<mark>' + esc(resText.slice(found, found + needle.length)) + '</mark>';
-			at = found + needle.length;
 			hits++;
+			// The text is always emitted; only the highlight stops at the cap. Putting the slice
+			// inside the `if` deleted every match past the cap AND the text before it, and Copy
+			// copied the damage.
+			const from = map[found] === undefined ? found : map[found];
+			const to = map[found + needle.length - 1] === undefined ? found + needle.length : map[found + needle.length - 1] + 1;
+			out += esc(resText.slice(at, from));
+			const hit = resText.slice(from, to);
+			out += hits <= SEARCH_MARK_CAP ? '<mark>' + esc(hit) + '</mark>' : esc(hit);
+			at = to;
 		}
 		out += esc(resText.slice(at));
 		$('body-out').innerHTML = out;
-		$('res-count').textContent = hits ? hits + (hits === 1 ? ' match' : ' matches') : 'no matches';
+		$('res-count').textContent = !hits ? 'no matches'
+			: hits > SEARCH_MARK_CAP ? count(hits, 'match', 'matches') + ' (first ' + SEARCH_MARK_CAP + ' marked)'
+				: count(hits, 'match', 'matches');
 	}
 
 	function responseHeadersText(r) {
@@ -2188,20 +2570,42 @@
 	});
 	$('copy-body').addEventListener('click', () => {
 		// copy exactly what the user sees (pretty-printed for JSON), not the raw wire text
-		if (lastResponse) { vscode.postMessage({ type: 'copy', text: $('body-out').textContent }); }
+		if (lastResponse) {
+			// a truncated display must not truncate the clipboard
+			const text = resTruncated ? lastResponse.body : $('body-out').textContent;
+			if (!text) { announce('Nothing to copy — the body is empty'); return; }
+			vscode.postMessage({ type: 'copy', text });
+			announce(resTruncated ? 'Copied the full response body' : 'Copied the response body');
+		}
 	});
 	$('copy-hdrs').addEventListener('click', () => {
-		if (lastResponse) { vscode.postMessage({ type: 'copy', text: responseHeadersText(lastResponse) }); }
+		if (lastResponse) {
+			vscode.postMessage({ type: 'copy', text: responseHeadersText(lastResponse) });
+			announce('Copied the response headers');
+		}
 	});
 	$('save-body').addEventListener('click', () => {
 		if (lastResponse) {
 			vscode.postMessage({ type: 'saveResponse', body: lastResponse.body, name: suggestedFileName(lastResponse) });
+			announce('Saving the response body');
 		}
 	});
 
-	/** The find box searches the body only; on the other tabs it would count invisible matches. */
+	/** One sentence for one event: the cancel copy lives here, not in two string literals. */
+	const CANCEL_COPY = 'Request cancelled — send again when ready.';
+
 	function announce(text) {
 		$('status-live').textContent = text;
+	}
+
+	/**
+	 * The URL the wire saw, after `{{vars}}` and `:id` were resolved. Shown only when it differs from
+	 * the field, because that difference is the only way to debug a variable-driven request.
+	 */
+	function sentUrlNote(r) {
+		const typed = $('url').value.trim();
+		if (!r.sentUrl || r.sentUrl === typed) { return ''; }
+		return '<span class="metric prose" title="' + esc(r.sentUrl) + '">sent ' + esc(r.sentUrl) + '</span>';
 	}
 
 	/** When the Socket tab is open, say that the pane below is the last HTTP response. */
@@ -2209,25 +2613,26 @@
 		$('context-line').hidden = !lastResponse || !$('pane-socket').classList.contains('active');
 	}
 
+	/** The find box searches the body only; on the other tabs it would count invisible matches. */
 	function syncSearchScope(active) {
 		// readOnly, not disabled: disabling the focused element moves focus to <body>
 		$('res-search').readOnly = !active;
 		$('res-search').placeholder = active ? 'Find in body' : 'Find in body (Body tab)';
-		if (!active) { $('res-count').textContent = ''; }
+		// leaving the Body tab disables the box; the count and the marks must not disagree, so both go
+		if (!active) { clearSearch(); }
 	}
 
 	function renderResponse(r) {
-		finishSend();
 		$('empty-state').hidden = true;
 
 		if (r.error) {
-			// the host never forwards an aborted request, so a cancel never reaches here; the button
-			// path (cancelSend) owns that copy. Keep a neutral rendition for a host-sent cancel.
+			// the host never forwards an aborted request, so a cancel only reaches here if a host
+			// chooses to send one; the copy is the same sentence the button path uses.
 			const cancelled = /cancel/i.test(r.error);
 			$('status').hidden = false;
 		$('status').innerHTML =
-			'<span class="badge ' + (cancelled ? 'warn' : 'err') + '">' + (cancelled ? 'cancelled' : 'Failed') + '</span>' +
-				'<span class="metric' + (cancelled ? '' : ' fail') + '">' + esc(cancelled ? 'Request cancelled — send again when ready.' : recoveryHint(r.error)) + '</span>';
+			'<span class="badge ' + (cancelled ? 'warn' : 'err') + '">' + (cancelled ? 'Cancelled' : 'Failed') + '</span>' +
+				'<span class="metric' + (cancelled ? '' : ' fail') + '">' + esc(cancelled ? CANCEL_COPY : recoveryHint(r.error)) + '</span>';
 			announce(cancelled ? 'Request cancelled' : 'Request failed: ' + r.error);
 			// keep the last good response on screen so the user can still copy from it, but say
 			// plainly that it is the previous one — never a silent mix
@@ -2235,6 +2640,7 @@
 				$('stale-banner').firstElementChild.innerHTML = cancelled
 				? 'Showing the <b>previous</b> response — this request was cancelled.'
 				: 'Showing the <b>previous</b> response — the last request failed.';
+			finishSend();
 			return;
 		}
 		$('stale-banner').hidden = true;
@@ -2244,46 +2650,72 @@
 		$('status').hidden = false;
 		const ttfb = typeof r.ttfbMs === 'number' ? r.ttfbMs : 0;
 		const download = Math.max(0, r.timeMs - ttfb);
-		$('status').innerHTML =
-			'<span class="badge ' + cls + '">' + r.status + ' ' + esc(r.statusText) + '</span>' +
-			'<span class="metric" title="' + ttfb + ' ms time to first byte + ' + download + ' ms download of ' + fmtSize(r.size) + '">' +
-			'<b>' + r.timeMs + '</b> ms · <b>' + fmtSize(r.size) + '</b></span>' +
-			'<span class="metric">' + esc(ct || 'no content-type') + '</span>' +
+		// facts are separated by one glyph in one place; the sentences that follow carry their own rhythm
+		const facts = [
+			'<span class="badge ' + cls + '">' + r.status + (r.statusText ? ' ' + esc(r.statusText) : '') + '</span>',
+			'<span class="metric" title="' + ttfb + ' ms time to first byte + ' + download + ' ms download of ' + fmtSize(r.size) + '"><b>' + r.timeMs + '</b> ms</span>',
+			'<span class="metric"><b>' + fmtSize(r.size) + '</b></span>',
+			'<span class="metric">' + esc(ct || 'no content-type') + '</span>',
+		];
+		// each fact carries its own separator, so a wrapped row never starts with a dangling dot
+		$('status').innerHTML = facts.map((f) => '<span class="fact">' + f + '</span>').join('<span class="sep">·</span>') +
 			'<span class="metric prose" id="status-detail">' + esc(statusHint(r.status)) + '</span>' +
-			'<span class="metric" id="status-scripts"></span>';
-		announce(`Response ${r.status} ${r.statusText}, ${r.timeMs} milliseconds, ${fmtSize(r.size)}`);
+			'<span class="metric" id="status-scripts"></span>' +
+			sentUrlNote(r);
+		announce(`Response ${r.status}${r.statusText ? ' ' + r.statusText : ''}, ${r.timeMs} milliseconds, ${fmtSize(r.size)}`);
 
 		lastResponse = r;
 		// parse once: `resText` (pretty for JSON) is derived from the same value
 		const parsedJson = /json/.test(ct) ? tryParse(r.body) : {};
 		resJson = parsedJson.value;
-		resText = resJson === undefined ? r.body : pretty(r.body);
+		// stringify the value we already parsed: `pretty(r.body)` parsed the same string a second time
+		resJson === undefined ? (resText = r.body) : (resText = JSON.stringify(resJson, null, 2));
+		// the pane paints `resText`, so the cap has to measure `resText`, not the raw body
+		resTruncated = resText.length > DISPLAY_CAP;
+		if (resTruncated) {
+			resJson = undefined;
+			resText = 'This response is ' + fmtSize(r.size) + ' — too large to display. Use Save to write it to a file.';
+		}
+		hideKeepingFocus($('rtree-tab'), $('rtab-body'));
 		$('rtree-tab').hidden = resJson === undefined;
-		$('body-out').textContent = resText;
+		paintOutput();
+		$('body-out').scrollTop = 0;
 		// every response lands on Body: leaving Headers/Tree selected would render two panes at once
 		selectTab(responseTabs, $('rtab-body'));
 		$('body-out').hidden = false;
+		hideKeepingFocus($('tree-out'), $('rtab-body'));
+		hideKeepingFocus($('res-hdrs'), $('rtab-body'));
 		$('tree-out').hidden = true;
 		$('res-hdrs').hidden = true;
 		syncSearchScope(true);
 		syncContextLine();
-		clearSearch();
+		// the body was just painted; clearing the box must not paint it a second time
+		clearSearch(false);
 
-		$('res-hdrs').textContent = Object.entries(r.headers)
-			.map(([k, v]) => k + ': ' + v)
-			.join('\n');
+		// one builder for header text, shared with Copy headers
+		$('res-hdrs').textContent = responseHeadersText(r);
 
 		$('res-tabs').hidden = false;
 		refreshStatusScripts();
+		// parsing and painting a multi-megabyte body is synchronous: the panel is idle only now
+		finishSend();
 	}
 
 	function fmtSize(n) {
-		if (n < 1024) return n + ' B';
-		if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+		if (n < 1024) { return n + ' B'; }
+		const kb = n / 1024;
+		// 1048575 B rounds to "1024.0 KB": promote once the rounded value reaches the next unit
+		if (Math.round(kb * 10) / 10 < 1024) { return kb.toFixed(1) + ' KB'; }
 		return (n / 1024 / 1024).toFixed(1) + ' MB';
 	}
 	function esc(s) {
 		return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+	}
+
+	/** The request pane that is showing, so a reload lands where the user was. */
+	function activePaneId() {
+		const tab = [...document.querySelectorAll('[role="tab"][data-pane]')].find((t) => t.getAttribute('aria-selected') === 'true');
+		return tab ? tab.dataset.pane : 'headers';
 	}
 
 	// restore state across panel hide/show
@@ -2304,6 +2736,10 @@
 		$('test-script').value = saved.test || '';
 		if (saved.socketUrl) { $('socket-url').value = saved.socketUrl; }
 		if (saved.socketMode) { $('socket-mode').value = saved.socketMode; }
+		if (saved.pane) {
+			const tab = document.getElementById('tab-' + saved.pane);
+			if (tab) { tab.click(); }
+		}
 		if (saved.binary?.path) {
 			binaryFile = saved.binary;
 			$('binary-name').textContent = saved.binary.name;
@@ -2316,20 +2752,21 @@
 	refreshChrome();
 	// the host does not survive a reload; hand it back the file this panel was editing
 	if (saved && saved.filePath) { vscode.postMessage({ type: 'restorePath', path: saved.filePath }); }
-	// restored editor state has not been written to disk: say so, or the next load discards it
-	if (saved && (saved.filePath || saved.url)) { markDirty(); }
+	// A restored panel holds edits the file on disk may not have. The host cannot know that (the edits
+	// live here), so the webview claims dirty once and keeps it until a save or a load-from-disk.
+	let restoredUnsaved = !!(saved && (saved.filePath || saved.url));
+	if (restoredUnsaved) { markDirty(); }
 
 	/** Header count badge, dirty marker, and the "which saved request is this" label. */
 	function setDot(id, on) {
 		const dot = $(id);
 		if (!dot) { return; }
 		dot.hidden = !on;
-		dot.dataset.on = on ? 'true' : 'false';
 	}
 
 	function refreshChrome() {
-		const count = collectKv('headers').length;
-		$('header-count').textContent = count ? String(count) : '';
+		const headerRows = collectKv('headers').length;
+		$('header-count').textContent = headerRows ? String(headerRows) : '';
 		const active = envs.active || '';
 		$('env').title = active ? `Environment: ${active}` : 'No environment — variables will not resolve';
 		setDot('body-dot', collectBody().type !== 'none');
@@ -2338,7 +2775,28 @@
 		// headers become an object on the wire, so a repeated name silently disappears
 		const dupes = duplicateHeaders();
 		$('header-warn').hidden = !dupes.length;
+		// the wire joins duplicate names into one value; saying "the last one wins" was wrong
+		$('header-warn').textContent = dupes.length === 1
+			? 'Duplicate name — the values are joined'
+			: count(dupes.length, 'duplicate name', 'duplicate names') + ' — the values are joined';
+		syncCtHint();
+		// the duplicate collapse happens on the wire, so the tab strip has to say so from any tab
+		setDot('headers-dot', dupes.length);
 		$('header-warn').title = dupes.join(', ');
+	}
+
+	/**
+	 * Every mutation the user makes to the request goes through here: remove a row, pick a file,
+	 * add a field. Deleting a header used to write state and refresh chrome but never raise the
+	 * dirty flag, so the host's discard guard never fired and the edit vanished on the next load.
+	 */
+	function mutate() {
+		markDirty();
+		persist();
+		refreshChrome();
+		// adding/removing a header or picking a file changes the snippet too, and those paths do not
+		// emit `input`
+		if ($('pane-code').classList.contains('active')) { requestSnippet(); }
 	}
 
 	function markDirty() {
@@ -2364,7 +2822,9 @@
 			...(vscode.getState() || {}),
 			method: $('method').value,
 			url: $('url').value,
-			headers: Object.entries(collectHeaders()),
+			// rows, not an object: duplicates are surfaced by a chip, and collapsing them here deleted
+			// the user's second row on the next reload
+			headers: collectKv('headers'),
 			bodyType: bodyType(),
 			raw: $('body').value,
 			pretty: $('pretty-toggle').checked,
@@ -2375,6 +2835,7 @@
 			test: $('test-script').value,
 			binary: binaryFile,
 			filePath,
+			pane: activePaneId(),
 			socketUrl: $('socket-url').value,
 			socketMode: $('socket-mode').value,
 		});
@@ -2389,23 +2850,37 @@
 	// message per frame, and serialising the whole body for each of them is pure waste
 	const PERSISTING = new Set(['response', 'load', 'identity', 'envs']);
 	window.addEventListener('message', (msg) => {
-		if (!msg || PERSISTING.has(msg.type)) { persist(); }
+		// `msg` is a MessageEvent: its `.type` is always "message", the panel's tag is in `.data`
+		const tag = msg && msg.data && msg.data.type;
+		if (!tag || PERSISTING.has(tag)) { persist(); }
 	});
 	// only edits to the request are edits: searching a response or typing a socket frame is not
 	// the composer and the request tabs are the request; the response pane and the socket session are not
 	const isRequestEdit = (el) => !!(el && el.closest && !el.matches('#env') &&
 		!el.closest('#response') && !el.closest('#pane-socket'));
+	// the socket URL and protocol are restored from state, so typing them has to reach state
+	$('socket-url').addEventListener('input', persist);
+	$('socket-mode').addEventListener('change', persist);
 	document.addEventListener('input', (e) => {
-		persist();
-		if (isRequestEdit(e.target)) { markDirty(); }
+		// typing in the find box or the socket message cannot change the request: persisting would
+		// re-serialise the whole body per keystroke for state nobody changed
+		if (isRequestEdit(e.target)) {
+			// a 3 MB body is 3 MB of state per keystroke: past 200 KB the write waits for a pause
+			clearTimeout(persistTimer);
+			if ($('body').value.length < 200000) { persist(); } else { persistTimer = setTimeout(persist, 250); }
+			markDirty();
+		}
 		refreshChrome();
 	});
 	document.addEventListener('change', (e) => {
-		persist();
-		if (isRequestEdit(e.target)) { markDirty(); }
+		if (isRequestEdit(e.target)) { persist(); markDirty(); }
 		refreshChrome();
 	});
 
+	// titles carry the platform's modifier, not a guess
+	$('send').title = 'Send (' + MOD + '+Enter)';
+	$('save').title = 'Save to collection (' + MOD + '+S)';
+	$('empty-mod').textContent = MOD;
 	renderEnvs({ names: [] });
 
 	// Tell the extension the editor is live, so a queued "load request" can be delivered.

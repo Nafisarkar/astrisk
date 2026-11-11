@@ -731,7 +731,8 @@ describe('response extras', () => {
 		const big = JSON.stringify(Array.from({ length: 5000 }, (_, i) => ({ i })));
 		respond(m, big);
 		(m.doc.querySelector('#res-tabs .tab[data-rpane="rtree"]') as any).click();
-		expect(m.el('tree-out').textContent).toContain('truncated');
+		// the cap is by node count, so the copy names the cap it actually hit
+		expect(m.el('tree-out').textContent).toContain('stopped at 2000 nodes');
 	});
 
 	test('search highlights literal matches and counts them', async () => {
@@ -883,7 +884,8 @@ describe('scripts tab', () => {
 			script: { logs: [], assertions: [{ name: 'expect(response.status).to.equal(201)', passed: false, message: '200 !== 201' }] },
 		});
 		const text = m.el('script-results').textContent;
-		expect(text).toContain('1 of 1 assertions failed');
+		// one failing assertion is one assertion, not "1 assertions"
+		expect(text).toContain('1 of 1 assertion failed');
 		expect(text).toContain('expect(response.status).to.equal(201)');
 		expect(text).toContain('200 !== 201');
 	});
@@ -1094,7 +1096,7 @@ describe('polish round: states, a11y, layout', () => {
 			response: { ok: true, status: 200, statusText: 'OK', headers: {}, body: '', sentUrl: '', timeMs: 1, ttfbMs: 1, size: 0 },
 			script: { logs: [], assertions: [{ name: 'expect(response.status).to.equal(201)', passed: false, message: 'expected 200 to equal 201' }] },
 		});
-		expect(m.el('status').textContent).toContain('1 failed');
+		expect(m.el('status').textContent).toContain('1 assertion failed');
 		expect(m.el('status').textContent).toContain('expected 200 to equal 201');
 	});
 
@@ -1105,7 +1107,7 @@ describe('polish round: states, a11y, layout', () => {
 		m.message({ type: 'socketState', state: 'closed', error: 'reset' });
 		expect(m.el('socket-reconnect').hidden).toBe(false);
 		// the failure reason is announced, not only written to the (silent) log
-		expect(m.el('socket-state').textContent).toBe('connection failed');
+		expect(m.el('socket-state').textContent).toBe('Connection failed');
 	});
 });
 
@@ -1225,7 +1227,10 @@ describe('polish round: response panes, cancel, hints', () => {
 		m.el('send').click();
 		expect(m.el('send').hidden).toBe(false);
 		expect(m.el('send').disabled).toBe(false);
-		expect(m.el('send').getAttribute('aria-disabled')).toBe('true');
+		// aria-busy, not aria-disabled: the control is available and pressing it supersedes the request
+		expect(m.el('send').getAttribute('aria-busy')).toBe('true');
+		expect(m.el('send').getAttribute('aria-disabled')).toBeNull();
+		expect(m.el('send').title).toContain('replace');
 		m.posted.length = 0;
 		m.el('send').click();
 		expect(m.posted.filter((p) => p.type === 'send')).toHaveLength(1);
@@ -1285,7 +1290,7 @@ describe('polish round 5: contracts B found broken', () => {
 		m.message({ type: 'socketState', state: 'open' });
 		m.message({ type: 'socketState', state: 'closed', text: '— closed (1000)' });
 		expect(m.el('socket-reconnect').hidden).toBe(false);
-		expect(m.el('socket-state').textContent).toBe('disconnected');
+		expect(m.el('socket-state').textContent).toBe('Disconnected');
 	});
 
 	test('arrow keys skip the Tree tab when the body is not JSON', () => {

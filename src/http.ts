@@ -182,7 +182,7 @@ export async function sendRequest(req: HttpRequest, vars: Record<string, string>
 	} catch (e: any) {
 		if (req.signal?.aborted) {return fail(started, 'Request cancelled');}
 		const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
-		if (timedOut) {return fail(started, `Request timed out after ${req.timeoutMs ?? 30_000}ms`);}
+		if (timedOut) {return fail(started, `Request timed out after ${req.timeoutMs ?? 30_000} ms`);}
 		// undici hides the useful part in `cause`: "fetch failed" alone cannot tell a typo'd host
 		// (ENOTFOUND) from a dead port (ECONNREFUSED) from a bad certificate
 		const cause = e?.cause?.code || e?.cause?.errno || e?.code;
