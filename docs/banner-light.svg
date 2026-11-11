@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-label="asterisk — a local-first HTTP client for VS Code">
+	<defs>
+		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#ffffff"/>
+			<stop offset="1" stop-color="#f2f5f9"/>
+		</linearGradient>
+		<radialGradient id="glow" cx="0.16" cy="0.42" r="0.5">
+			<stop offset="0" stop-color="#0969da" stop-opacity="0.13"/>
+			<stop offset="1" stop-color="#0969da" stop-opacity="0"/>
+		</radialGradient>
+		<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+			<path d="M32 0H0V32" fill="none" stroke="#0b1b33" stroke-opacity="0.06"/>
+		</pattern>
+		<clipPath id="round"><rect width="1280" height="300" rx="18"/></clipPath>
+		<g id="mark" fill="currentColor">
+			<path d="M24.36 91.24 C19.97 88.63 16.12 86.2 15.81 85.85 C14.84 84.76 15.05 84.0 17.67 79.26 C19.01 76.85 20.59 74.12 21.19 73.2 C23.11 70.25 26.15 67.91 29.8 66.55 L31.62 65.88 L45.25 65.75 C60.06 65.61 59.6 65.66 60.51 64.17 C61.42 62.69 61.03 61.08 59.52 60.07 L58.68 59.5 L30.07 59.5 L1.46 59.5 L0.73 58.77 L0.0 58.04 L0.0 48.0 L0.0 37.96 L0.73 37.23 L1.46 36.5 L14.98 36.5 C22.42 36.5 28.5 36.43 28.5 36.33 C28.5 36.24 25.52 30.81 21.88 24.27 C17.09 15.68 15.25 12.15 15.25 11.57 C15.25 11.1 15.48 10.52 15.81 10.15 C16.59 9.27 32.22 0.0 32.92 0.0 C33.24 0.0 33.82 0.31 34.23 0.69 C34.83 1.25 38.4 7.5 46.93 22.94 C47.41 23.8 47.89 24.5 48.0 24.5 C48.11 24.5 48.59 23.8 49.07 22.94 C57.6 7.5 61.17 1.25 61.77 0.69 C62.18 0.31 62.76 0.0 63.08 0.0 C63.78 0.0 79.41 9.27 80.19 10.15 C81.16 11.24 80.95 12.0 78.33 16.74 C76.99 19.15 75.41 21.88 74.8 22.81 C72.87 25.79 69.78 28.12 66.02 29.45 L64.12 30.12 L50.44 30.25 L36.76 30.38 L35.94 31.19 C35.22 31.91 35.12 32.17 35.12 33.35 C35.12 34.34 35.26 34.85 35.62 35.26 C36.77 36.54 35.68 36.5 66.14 36.5 L94.54 36.5 L95.27 37.23 L96.0 37.96 L96.0 48.0 L96.0 58.04 L95.27 58.77 L94.54 59.5 L81.02 59.5 C73.58 59.5 67.5 59.57 67.5 59.67 C67.5 59.76 70.48 65.19 74.12 71.73 C78.91 80.32 80.75 83.85 80.75 84.43 C80.75 84.9 80.52 85.48 80.19 85.85 C79.41 86.73 63.78 96.0 63.08 96.0 C62.76 96.0 62.18 95.69 61.77 95.31 C61.17 94.75 57.6 88.5 49.07 73.06 C48.59 72.2 48.11 71.5 48.0 71.5 C47.89 71.5 47.41 72.2 46.93 73.06 C38.4 88.5 34.83 94.75 34.23 95.31 C33.82 95.69 33.24 96.0 32.92 96.0 C32.61 96.0 28.76 93.86 24.36 91.24 Z"/>
+		</g>
+	</defs>
+
+	<g clip-path="url(#round)">
+		<rect width="1280" height="300" fill="url(#bg)"/>
+		<rect width="1280" height="300" fill="url(#grid)"/>
+		<rect width="1280" height="300" fill="url(#glow)"/>
+		<rect x="0.5" y="0.5" width="1279" height="299" rx="17.5" fill="none" stroke="#0b1b33" stroke-opacity="0.14"/>
+
+		<!-- mark + wordmark -->
+		<g transform="translate(72 106)" color="#0969da"><use href="#mark" x="0" y="0" width="88" height="88"/></g>
+		<text x="192" y="152" font-family="Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="62" font-weight="620" letter-spacing="-2" fill="#0e1726">asterisk</text>
+		<text x="195" y="192" font-family="Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="21" fill="#54637a">A local-first HTTP client for VS Code.</text>
+
+		<!-- version chip -->
+		<g transform="translate(195 208)">
+			<rect width="96" height="26" rx="13" fill="#4daafc" fill-opacity="0.10" stroke="#0969da" stroke-opacity="0.4"/>
+			<text x="48" y="18" text-anchor="middle" font-family="Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#0a58c0">0.1 beta</text>
+		</g>
+		<g transform="translate(303 208)">
+			<rect width="112" height="26" rx="13" fill="#3fb950" fill-opacity="0.12" stroke="#1a7f37" stroke-opacity="0.4"/>
+			<text x="56" y="18" text-anchor="middle" font-family="Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#1a7f37">zero deps</text>
+		</g>
+
+		<!-- panel mock -->
+		<g transform="translate(772 62)">
+			<rect width="452" height="176" rx="10" fill="#ffffff" stroke="#0b1b33" stroke-opacity="0.16"/>
+			<rect x="0.5" y="0.5" width="451" height="30" rx="9.5" fill="#0b1b33" fill-opacity="0.035" stroke="none"/>
+			<circle cx="18" cy="16" r="5" fill="#0969da"/>
+			<text x="34" y="20.5" font-family="Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11.5" fill="#5c6b81">create-customer</text>
+			<g font-family="ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace" font-size="12.5">
+				<text x="18" y="60" fill="#1a7f37" font-weight="600">GET</text>
+				<text x="58" y="60" fill="#1b2637">https://api.stripe.com/v1/customers</text>
+				<rect x="18" y="74" width="52" height="20" rx="10" fill="#1a7f37" fill-opacity="0.12" stroke="#1a7f37" stroke-opacity="0.45"/>
+				<text x="44" y="88" text-anchor="middle" font-size="11" font-weight="600" fill="#1a7f37">200 OK</text>
+				<text x="82" y="88" fill="#5c6b81">184 ms</text>
+				<text x="136" y="88" fill="#5c6b81">214 B</text>
+				<text x="186" y="88" fill="#5c6b81">application/json</text>
+				<text x="18" y="118" fill="#6b7a90">{</text>
+				<text x="34" y="136" fill="#3d4a5e">"id": "cus_9x2",</text>
+				<text x="34" y="154" fill="#3d4a5e">"name": "Ada Lovelace"</text>
+				<text x="18" y="172" fill="#6b7a90">}</text>
+			</g>
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,3 @@
+[test]
+# Only Bun-runnable tests. src/test/ and out/test/ need the VS Code host.
+root = "./test"

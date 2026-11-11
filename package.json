@@ -1,0 +1,330 @@
+{
+  "name": "asterisk",
+  "displayName": "Asterisk",
+  "description": "A local-first HTTP client for VS Code — requests, collections and environments as plain files.",
+  "version": "0.1.0-beta.1",
+  "publisher": "nafi",
+  "private": true,
+  "license": "MIT",
+  "preview": true,
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0e131c",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nafi/asterisk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nafi/asterisk/issues"
+  },
+  "homepage": "https://github.com/nafi/asterisk#readme",
+  "keywords": [
+    "http",
+    "rest",
+    "api",
+    "client",
+    "rest-client",
+    "postman",
+    "insomnia",
+    "curl",
+    "websocket",
+    "sse",
+    "testing",
+    "scripting",
+    "local-first",
+    "offline"
+  ],
+  "categories": [
+    "Other",
+    "Testing",
+    "Debuggers"
+  ],
+  "engines": {
+    "vscode": "^1.143.0"
+  },
+  "activationEvents": [
+    "onView:asterisk.collections",
+    "onView:asterisk.history",
+    "onWebviewPanel:asterisk"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "asterisk.open",
+        "title": "Open API Client",
+        "category": "asterisk",
+        "icon": "$(add)"
+      },
+      {
+        "command": "asterisk.newCollection",
+        "title": "New Collection",
+        "category": "asterisk",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "asterisk.newFolder",
+        "title": "New Folder",
+        "category": "asterisk",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "asterisk.saveRequest",
+        "title": "Save Request to Collection",
+        "category": "asterisk",
+        "icon": "$(save)"
+      },
+      {
+        "command": "asterisk.renameNode",
+        "title": "Rename",
+        "category": "asterisk"
+      },
+      {
+        "command": "asterisk.deleteNode",
+        "title": "Delete",
+        "category": "asterisk"
+      },
+      {
+        "command": "asterisk.refresh",
+        "title": "Refresh",
+        "category": "asterisk",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "asterisk.envs.edit",
+        "title": "Edit Environments",
+        "category": "asterisk",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "asterisk.envs.rename",
+        "title": "Rename Environment",
+        "category": "asterisk"
+      },
+      {
+        "command": "asterisk.envs.delete",
+        "title": "Delete Environment",
+        "category": "asterisk"
+      },
+      {
+        "command": "asterisk.history.replay",
+        "title": "Replay Request",
+        "category": "asterisk"
+      },
+      {
+        "command": "asterisk.history.search",
+        "title": "Search History",
+        "category": "asterisk",
+        "icon": "$(search)"
+      },
+      {
+        "command": "asterisk.history.clear",
+        "title": "Clear History",
+        "category": "asterisk",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "asterisk.history.refresh",
+        "title": "Refresh History",
+        "category": "asterisk",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "asterisk.import.curl",
+        "title": "Import cURL from Clipboard",
+        "category": "asterisk",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "asterisk.import.postman",
+        "title": "Import Postman Collection",
+        "category": "asterisk",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "asterisk.import.openapi",
+        "title": "Import OpenAPI",
+        "category": "asterisk",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "asterisk.export.curl",
+        "title": "Copy as cURL",
+        "category": "asterisk",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "asterisk.run.collection",
+        "title": "Run Collection",
+        "category": "asterisk",
+        "icon": "$(play)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "asterisk",
+          "title": "Asterisk",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "asterisk": [
+        {
+          "id": "asterisk.collections",
+          "name": "Collections",
+          "icon": "media/icon.svg"
+        },
+        {
+          "id": "asterisk.history",
+          "name": "History",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "asterisk.newCollection",
+          "when": "view == asterisk.collections",
+          "group": "navigation@1"
+        },
+        {
+          "command": "asterisk.saveRequest",
+          "when": "view == asterisk.collections",
+          "group": "navigation@2"
+        },
+        {
+          "command": "asterisk.refresh",
+          "when": "view == asterisk.collections",
+          "group": "navigation@3"
+        },
+        {
+          "command": "asterisk.open",
+          "when": "view == asterisk.collections",
+          "group": "navigation@5"
+        },
+        {
+          "command": "asterisk.envs.edit",
+          "when": "view == asterisk.collections",
+          "group": "navigation@4"
+        },
+        {
+          "command": "asterisk.history.search",
+          "when": "view == asterisk.history",
+          "group": "navigation@1"
+        },
+        {
+          "command": "asterisk.history.clear",
+          "when": "view == asterisk.history",
+          "group": "navigation@2"
+        },
+        {
+          "command": "asterisk.history.refresh",
+          "when": "view == asterisk.history",
+          "group": "navigation@3"
+        },
+        {
+          "command": "asterisk.import.curl",
+          "when": "view == asterisk.collections",
+          "group": "import@1"
+        },
+        {
+          "command": "asterisk.import.postman",
+          "when": "view == asterisk.collections",
+          "group": "import@2"
+        },
+        {
+          "command": "asterisk.import.openapi",
+          "when": "view == asterisk.collections",
+          "group": "import@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "asterisk.newFolder",
+          "when": "view == asterisk.collections && viewItem =~ /^(collection|folder)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "asterisk.renameNode",
+          "when": "view == asterisk.collections && viewItem =~ /^(collection|folder|request)$/",
+          "group": "1_edit@1"
+        },
+        {
+          "command": "asterisk.deleteNode",
+          "when": "view == asterisk.collections && viewItem =~ /^(collection|folder|request)$/",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "asterisk.run.collection",
+          "when": "view == asterisk.collections && viewItem =~ /^(collection|folder)$/",
+          "group": "inline@2"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "asterisk.collections",
+        "contents": "No collections yet.\n[New Collection](command:asterisk.newCollection)\n[Open the client](command:asterisk.open) to build a request, then hit Save to keep it here."
+      },
+      {
+        "view": "asterisk.history",
+        "contents": "No requests sent yet.\nSend one from the [client](command:asterisk.open) and it shows up here."
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "asterisk.open",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "asterisk.saveRequest",
+        "key": "ctrl+s",
+        "when": "activeWebviewPanelId == 'asterisk'"
+      }
+    ],
+    "configuration": {
+      "title": "Asterisk",
+      "properties": {
+        "asterisk.timeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "description": "Request timeout in milliseconds."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && npm run copy-webview",
+    "copy-webview": "node -e \"require('fs').cpSync('src/webview','out/webview',{recursive:true})\"",
+    "watch": "tsc -watch -p ./",
+    "pretest": "bun run verify:webview",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "bun test",
+    "verify:webview": "bun -e \"const fs=require('fs');const a=fs.readFileSync('src/webview/main.html');const b=fs.readFileSync('out/webview/main.html');if(!a.equals(b)){console.error('out/webview is stale — run the build');process.exit(1)}\""
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/vscode": "~1.140.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "eslint": "^10.5.0",
+    "happy-dom": "^21.0.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}

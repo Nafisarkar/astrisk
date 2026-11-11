@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>asterisk</title>
+<style>
+	:root {
+		--gap: 8px;
+		--pad: 12px;
+		--radius: 3px;
+		--radius-sm: 2px;
+		--mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+		--accent: var(--vscode-focusBorder);
+		--line: var(--vscode-widget-border, var(--vscode-panel-border, #44444455));
+		/* interactive edges (sash, keycaps, pane borders) need ~3:1; --line is decorative */
+		--edge: color-mix(in srgb, var(--vscode-foreground) 62%, transparent);
+		--surface: var(--vscode-editor-background);
+		--surface-2: var(--vscode-sideBar-background, var(--vscode-editorWidget-background, var(--vscode-editor-background)));
+		--dim: var(--vscode-descriptionForeground, var(--vscode-foreground));
+		--ok: var(--vscode-testing-iconPassed, #1a7f37);
+		--warn: var(--vscode-editorWarning-foreground, #9a6700);
+		--err: var(--vscode-errorForeground, #cf222e);
+		--ctrl-h: 26px;
+		--pane-max-ratio: 0.78;
+		--row-gap: 6px;
+	}
+
+	* { box-sizing: border-box; }
+	/* `hidden` must win over every display rule we set (menus, rows, tabs all set display) */
+	[hidden] { display: none !important; }
+
+	html, body { height: 100%; }
+
+	body {
+		margin: 0;
+		padding: var(--pad) var(--pad) 0;
+		color: var(--vscode-foreground);
+		background: var(--surface);
+		font-family: var(--vscode-font-family);
+		font-size: var(--vscode-font-size, 13px);
+		line-height: 1.45;
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+		overflow: hidden;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.spacer { flex: 1 1 auto; }
+	.hint { color: var(--dim); font-size: 0.94em; font-weight: 400; }
+
+	/* ---------- controls: one height, one radius, one focus ring ---------- */
+	:where(button, select, input, textarea) {
+		font: inherit;
+		color: var(--vscode-input-foreground, var(--vscode-foreground));
+		background: var(--vscode-input-background);
+		border: 1px solid var(--vscode-input-border, transparent);
+		border-radius: var(--radius);
+		padding: 4px 8px;
+		min-height: var(--ctrl-h);
+	}
+	textarea { font-family: var(--mono); font-size: 0.94em; resize: vertical; line-height: 1.5; }
+	select { cursor: pointer; }
+	::placeholder { color: var(--vscode-input-placeholderForeground, var(--dim)); opacity: 1; }
+
+	:where(button, select, input, textarea, summary, [tabindex]):focus-visible {
+		outline: 1px solid var(--accent);
+		outline-offset: 1px;
+	}
+	input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+	button {
+		background: var(--vscode-button-secondaryBackground, transparent);
+		color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background-color 90ms ease-out, opacity 90ms ease-out;
+	}
+	button:hover { background: var(--vscode-button-secondaryHoverBackground, var(--vscode-toolbar-hoverBackground, transparent)); }
+	button.secondary { border: 1px solid var(--edge); background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+	button:not(.primary):not(.icon):not(.secondary):not(.ghost):active { background-color: var(--vscode-button-hoverBackground, #026ec1); }
+	button.primary:active { background: var(--vscode-button-hoverBackground, #026ec1); }
+	button:disabled { opacity: 0.5; cursor: default; }
+	/* in flight: dimmed but still activatable, so a second send supersedes the first */
+	button[aria-disabled="true"] { opacity: 0.6; }
+
+	button.primary {
+		background: var(--vscode-button-background);
+		color: var(--vscode-button-foreground);
+		font-weight: 600;
+		padding-inline: 18px;
+	}
+	button.primary:hover { background: var(--vscode-button-hoverBackground); }
+
+	button.icon {
+		width: var(--ctrl-h);
+		min-width: var(--ctrl-h);
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		border-color: transparent;
+		color: var(--dim);
+	}
+	button.icon:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, #80808022); }
+	button.icon svg, .search-icon {
+		width: 14px;
+		height: 14px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.4;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	button.ghost {
+		align-self: flex-start;
+		background: transparent;
+		border-color: transparent;
+		color: var(--dim);
+		padding: 2px 4px;
+		min-height: 22px;
+	}
+	button.ghost:hover { background: var(--vscode-toolbar-hoverBackground, #80808022); color: var(--vscode-textLink-foreground, var(--vscode-foreground)); }
+	/* the caret, scrollbar and selection are part of the design too */
+	textarea, input { caret-color: var(--vscode-editorCursor-foreground, var(--vscode-foreground)); }
+	::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground, #79797999); }
+	::-webkit-scrollbar-thumb:active { background: var(--vscode-scrollbarSlider-activeBackground, #bfbfbf99); }
+
+	select.compact { flex: 0 1 auto; min-width: 0; }
+
+	.row { display: flex; gap: var(--row-gap); align-items: center; flex-wrap: wrap; min-width: 0; }
+	.row > input { flex: 1 1 160px; min-width: 0; }
+
+	/* ---------- composer ---------- */
+	.composer { display: flex; flex-direction: column; gap: var(--row-gap); }
+	.send-row { display: flex; gap: 6px; align-items: stretch; min-width: 0; }
+	.send-row .method { flex: 0 0 auto; font-weight: 600; font-family: var(--mono); letter-spacing: 0.02em; }
+	#url { flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: 0.96em; }
+
+	.meta-row { display: flex; gap: 6px; align-items: center; min-width: 0; }
+	.identity {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+		color: var(--vscode-foreground);
+		font-size: 1em;
+	}
+	#identity-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 38ch; font-weight: 600; }
+	#dirty-dot { color: var(--warn); font-size: 0.7em; vertical-align: 0.35em; }
+
+	.menu-wrap { position: relative; display: inline-flex; }
+	.menu {
+		position: absolute;
+		inset-inline-end: 0;
+		top: calc(var(--ctrl-h) + 4px);
+		z-index: 20;
+		min-width: 250px;
+		padding: 4px;
+		display: flex;
+		flex-direction: column;
+		background: var(--vscode-menu-background, var(--surface-2));
+		border: 1px solid var(--vscode-menu-border, var(--line));
+		border-radius: var(--radius);
+		box-shadow: 0 4px 16px var(--vscode-widget-shadow, #00000055);
+	}
+	.menu button {
+		text-align: start;
+		border: none;
+		background: transparent;
+		border-radius: var(--radius-sm);
+		padding: 4px 8px;
+		min-height: var(--ctrl-h);
+		color: var(--vscode-menu-foreground, var(--vscode-foreground));
+	}
+	.menu button:hover { background: var(--vscode-menu-selectionBackground, var(--accent)); color: var(--vscode-menu-selectionForeground, var(--vscode-button-foreground)); }
+
+	/* ---------- notice (the panel's own status/error strip) ---------- */
+	.notice {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+		padding: 6px 8px;
+		border-radius: var(--radius);
+		background: var(--vscode-inputValidation-warningBackground, #ffcc0033);
+		border: 1px solid var(--vscode-inputValidation-warningBorder, color-mix(in srgb, var(--warn) 65%, transparent));
+		font-size: 0.94em;
+	}
+	.notice[data-kind="error"] { background: var(--vscode-inputValidation-errorBackground, #f00d4a11); border-color: var(--vscode-inputValidation-errorBorder, var(--err)); }
+	.notice[data-kind="warn"] { background: color-mix(in srgb, var(--warn) 12%, transparent); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
+	.notice[data-kind="info"] { background: var(--vscode-inputValidation-infoBackground, #0af3); border-color: var(--vscode-inputValidation-infoBorder, var(--line)); }
+
+	.progress {
+		height: 3px;
+		overflow: hidden;
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, var(--accent) 20%, transparent);
+	}
+	.progress::after {
+		content: '';
+		display: block;
+		height: 100%;
+		width: 45%;
+		background: var(--accent);
+		/* the sweep stays on-screen from the first frame: no phase may show an empty track */
+		animation: progress-slide 1.6s ease-in-out infinite;
+	}
+	@keyframes progress-slide {
+		0% { transform: translateX(-40%); }
+		100% { transform: translateX(240%); }
+	}
+
+	/* ---------- tabs ---------- */
+	.tabs {
+		display: flex;
+		gap: 2px;
+		align-items: center;
+		flex-wrap: wrap;
+		border-bottom: 1px solid var(--line);
+		padding-bottom: 0;
+	}
+	.tab {
+		border: none;
+		background: transparent;
+		border-bottom: 2px solid transparent;
+		border-radius: 0;
+		padding: 4px 8px;
+		min-height: var(--ctrl-h);
+		line-height: 1;
+		color: var(--dim);
+		font-weight: 400;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+	}
+	.tab:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, #80808022); }
+	.tab.active { color: var(--vscode-foreground); border-bottom-color: var(--accent); }
+	.tab .count { color: var(--dim); font-size: 0.8em; font-variant-numeric: tabular-nums; }
+	.tab .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--vscode-textLink-foreground, var(--accent)); display: none; }
+	.tab .dot[data-on="true"] { display: inline-block; }
+
+	/* ---------- request panes ---------- */
+	.request { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; height: var(--composer-max, auto); max-height: calc(var(--pane-max-ratio, 0.78) * 100vh); overflow: auto; flex: 0 0 auto; }
+	.panes { min-height: 0; display: flex; flex-direction: column; }
+	.pane { display: none; flex-direction: column; gap: var(--row-gap); min-height: 0; }
+	.pane.active { display: flex; }
+	.sub { display: none; flex-direction: column; gap: 4px; }
+	.sub.active { display: flex; }
+
+	.kv-row { display: grid; grid-template-columns: minmax(90px, 240px) minmax(0, 1fr) var(--ctrl-h); gap: 4px; margin-bottom: var(--row-gap); }
+	.kv-row input { width: 100%; min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+	.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; gap: 4px; }
+	.kv-row:has(.pick) { grid-template-columns: minmax(90px, 0.8fr) auto minmax(0, 1.4fr) var(--ctrl-h); }
+	.kv-row .fname {
+		align-self: center;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--dim);
+		font-family: var(--mono);
+		font-size: 0.94em;
+	}
+	.kv input { min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+
+	.fields { display: flex; flex-direction: column; gap: 4px; }
+	.fields label { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 0.94em; }
+	.fields label span { color: var(--dim); }
+	.fields input { min-width: 0; font-family: var(--mono); font-size: 0.94em; }
+
+	.field-label { display: flex; gap: 8px; align-items: baseline; color: var(--vscode-foreground); font-size: 0.94em; font-weight: 500; }
+	.check { display: inline-flex; gap: 5px; align-items: center; color: var(--dim); font-size: 0.94em; cursor: pointer; }
+	.check input { min-height: 0; margin: 0; }
+
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 1px 7px;
+		border-radius: var(--radius);
+		font-size: 0.86em;
+		font-weight: 600;
+		white-space: nowrap;
+		color: var(--vscode-foreground);
+		border: 1px solid var(--status, var(--dim));
+		background: color-mix(in srgb, var(--status, var(--dim)) 8%, transparent);
+	}
+	.chip.bad { --status: var(--err); }
+	.chip.ok { --status: var(--ok); }
+
+	/* ---------- splitter ---------- */
+	#splitter {
+		height: 14px;
+		margin: 0 calc(var(--pad) * -1);
+		cursor: row-resize;
+		background: transparent;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 auto;
+		position: relative;
+	}
+	#splitter::before {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		top: 6px;
+		height: 1px;
+		background: var(--line);
+	}
+	/* a visible grip: the seam is draggable and says so */
+	#splitter::after {
+		content: '';
+		position: relative;
+		z-index: 1;
+		width: 34px;
+		height: 4px;
+		border-radius: var(--radius-sm);
+		background: var(--vscode-sash-hoverBorder, var(--edge));
+		transition: opacity 120ms ease-out, background-color 120ms ease-out, transform 120ms ease-out;
+	}
+	/* dragging must not select the text above the seam */
+	body.splitter-drag { user-select: none; cursor: row-resize; }
+	#splitter:hover::after, #splitter:focus-visible::after, #splitter[data-drag="true"]::after {
+		opacity: 1;
+		background: var(--accent);
+		transform: scaleY(1.5);
+	}
+
+	/* ---------- response ---------- */
+	#response {
+		flex: 1 1 0;
+		min-height: 90px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding-bottom: var(--pad);
+		min-width: 0;
+	}
+
+	.empty {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		align-items: flex-start;
+		padding: 18px 16px;
+		border: 1px dashed var(--edge);
+		border-radius: var(--radius);
+		color: var(--dim);
+		font-size: 0.94em;
+		max-width: 78ch;
+		/* first run reads like a card in the middle of the pane, not a stray paragraph */
+		margin: auto;
+		align-self: center;
+	}
+	.empty strong { color: var(--vscode-foreground); font-weight: 600; }
+	kbd {
+		font-family: inherit;
+		font-size: 0.94em;
+		padding: 0 4px;
+		border: 1px solid var(--edge);
+		border-bottom-width: 2px;
+		border-radius: var(--radius);
+		color: var(--vscode-foreground);
+	}
+
+	.status {
+		display: flex;
+		gap: var(--gap);
+		align-items: baseline;
+		flex-wrap: wrap;
+		row-gap: 4px;
+		font-size: 0.94em;
+	}
+	/* mono is for measured values, not for the verdict words around them */
+	.status .metric { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+	/* the failure guidance is not metadata: it is the sentence the user has to act on */
+	/* sentences, not measured values: sans, wrapping, full size */
+	.status .metric.fail, .status .metric.prose {
+		color: var(--err);
+		white-space: normal;
+		font-family: var(--vscode-font-family);
+		font-size: 1em;
+		max-width: 100%;
+	}
+	.status .metric.prose { color: var(--vscode-foreground); }
+	#status-detail:empty, #status-scripts:empty { display: none; }
+	.status .badge, .status .chip { font-family: var(--vscode-font-family); }
+	.status .metric b { color: var(--vscode-foreground); font-weight: 600; }
+	/* the inline failure hint is a nudge, not the report: trim it, the Scripts tab has the rest */
+	#status-scripts .metric { max-width: 34ch; overflow: hidden; text-overflow: ellipsis; }
+
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 1px 8px;
+		border-radius: var(--radius);
+		font-weight: 700;
+		/* em, not px: the badge must scale with the host font size like everything else */
+		font-size: 0.98em;
+		color: var(--vscode-foreground);
+		border: 1px solid var(--status, var(--dim));
+		background: color-mix(in srgb, var(--status, var(--dim)) 8%, transparent);
+	}
+	.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--status, currentColor); }
+	.badge.ok { --status: var(--ok); }
+	.badge.warn { --status: var(--warn); }
+	.badge.err { --status: var(--err); }
+
+	.response-tabs { gap: 4px; border-bottom: none; }
+	.strip-label { color: var(--dim); font-size: 0.86em; letter-spacing: 0.04em; text-transform: uppercase; padding-inline-end: 2px; }
+	/* the toolbar is one row: tabs, slack, then find + copy/save */
+	.response-bar { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+	.response-bar .search { flex: 0 1 260px; min-width: 120px; max-width: 320px; margin-inline-start: auto; }
+	/* the row actions are one unit: they must never split across two rows */
+	.actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+	.search {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 0 6px;
+		border: 1px solid var(--edge);
+		border-radius: var(--radius);
+		background: var(--vscode-input-background);
+		min-height: var(--ctrl-h);
+		flex: 0 1 240px;
+	}
+	.search:focus-within { border-color: var(--accent); }
+	.search input {
+		border: none;
+		background: transparent;
+		padding: 0;
+		min-height: 20px;
+		font-size: 0.94em;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+	.search input:focus-visible { outline: none; }
+	.search-icon { color: var(--dim); flex: 0 0 auto; }
+	#res-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+	.outs {
+		flex: 1 1 0;
+		margin: 0;
+		padding: 8px 10px;
+		border: 1px solid var(--edge);
+		border-radius: var(--radius);
+		min-height: 0;
+		overflow: auto;
+		font-family: var(--mono);
+		font-size: var(--vscode-editor-font-size, 12px);
+		line-height: 1.5;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		background: var(--vscode-textCodeBlock-background, var(--surface-2));
+		tab-size: 2;
+	}
+	.stale-banner {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		padding: 4px 8px;
+		border-radius: var(--radius);
+		border: 1px solid var(--vscode-inputValidation-warningBorder, color-mix(in srgb, var(--warn) 65%, transparent));
+		background: var(--vscode-inputValidation-warningBackground, color-mix(in srgb, var(--warn) 12%, transparent));
+		color: var(--vscode-foreground);
+		font-size: 0.94em;
+	}
+	/* a neutral note (which surface am I looking at?) must not borrow the warning frame */
+	.context-note {
+		border-color: var(--line);
+		background: transparent;
+		color: var(--dim);
+	}
+	.stale-banner b { color: var(--vscode-foreground); font-weight: 600; }
+	.headers-out { white-space: pre-wrap; font-size: 0.94em; }
+	#body-out mark { background: var(--vscode-editor-findMatchHighlightBackground, #ea5c0055); color: inherit; border-radius: var(--radius-sm); }
+
+	#tree-out details { margin-inline-start: 12px; }
+	#tree-out summary { cursor: pointer; padding: 1px 0; }
+	#tree-out summary::marker { color: var(--dim); }
+	#tree-out .tkey { color: var(--vscode-symbolIcon-propertyForeground, var(--vscode-foreground)); }
+	#tree-out .ttype { color: var(--dim); font-size: 0.94em; margin-inline-start: 6px; }
+	#tree-out .tval { color: var(--vscode-symbolIcon-stringForeground, var(--vscode-foreground)); }
+	#tree-out .tleaf { padding-inline-start: 12px; }
+
+	.snippet {
+		margin: 0;
+		padding: 8px 10px;
+		min-height: 90px;
+		overflow: auto;
+		/* the socket log and the response body are the same kind of surface */
+		border: 1px solid var(--edge);
+		border-radius: var(--radius);
+		background: var(--vscode-textCodeBlock-background, var(--surface-2));
+		font-family: var(--mono);
+		font-size: var(--vscode-editor-font-size, 12px);
+		line-height: 1.5;
+		white-space: pre;
+		tab-size: 2;
+		border-radius: var(--radius);
+	}
+
+	/* script results: real contrast, never dimmed */
+	.results { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.94em; min-height: 24px; }
+	.results .fail { color: var(--err); font-family: var(--mono); font-size: 0.96em; }
+	.results details { width: 100%; }
+	.results pre { margin: 4px 0 0; padding: 6px 8px; background: var(--vscode-textCodeBlock-background, var(--surface-2)); border-radius: var(--radius); font-family: var(--mono); font-size: 0.94em; max-height: 160px; overflow: auto; }
+
+	/* socket log: direction and errors are visually distinct */
+	#socket-log .line { display: block; }
+	#socket-log .line.in { color: var(--vscode-textLink-foreground, var(--vscode-foreground)); }
+	#socket-log .line.out { color: var(--vscode-terminal-ansiMagenta, var(--vscode-charts-purple, var(--vscode-symbolIcon-methodForeground))); }
+	#socket-log .line.system { color: var(--dim); font-style: italic; }
+	#socket-log .line.error { color: var(--err); }
+
+	/* ---------- host surfaces: selection, scrollbars, code ---------- */
+	::selection { background: var(--vscode-editor-selectionBackground, #264f78); color: var(--vscode-editor-selectionForeground, inherit); }
+	* { scrollbar-color: var(--vscode-scrollbarSlider-background) transparent; scrollbar-width: thin; }
+	code { font-family: var(--mono); font-size: 0.96em; background: var(--vscode-textCodeBlock-background, var(--surface-2)); padding: 0 3px; border-radius: var(--radius-sm); }
+
+	/* ---------- narrow panels: nothing clipped ---------- */
+	@media (max-width: 560px) {
+		.meta-row #env { flex: 0 1 auto; max-width: 50%; min-width: 0; }
+		#identity-name { max-width: 18ch; }
+		.response-bar { row-gap: 4px; }
+		.response-bar .search { flex: 1 1 96px; max-width: none; min-width: 96px; }
+		.kv { grid-template-columns: 1fr 1fr; }
+		.kv-row, .kv-row:has(.pick) { grid-template-columns: minmax(72px, 1fr) minmax(0, 1.4fr) var(--ctrl-h); }
+		.fields label { grid-template-columns: 1fr; gap: 2px; }
+		/* grid, so the URL takes exactly the slack and the action can never be pushed off-screen */
+		.send-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: stretch; }
+		.send-row .method { order: 1; }
+		.send-row #url { order: 2; min-width: 0; width: 100%; }
+		.send-row #send { order: 3; padding-inline: 12px; }
+		.send-row #cancel { order: 4; }
+		.send-row:has(#cancel:not([hidden])) { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+	}
+
+	body.vscode-high-contrast .hint,
+	body.vscode-high-contrast .identity,
+	body.vscode-high-contrast .tab,
+	body.vscode-high-contrast button.icon { color: var(--vscode-foreground); }
+	body.vscode-high-contrast .outs,
+	body.vscode-high-contrast .snippet,
+	body.vscode-high-contrast-light .outs,
+	body.vscode-high-contrast-light .snippet { border: 1px solid var(--vscode-contrastBorder, var(--vscode-foreground)); }
+	body.vscode-high-contrast .status .metric,
+	body.vscode-high-contrast .empty,
+	body.vscode-high-contrast .stale-banner,
+	body.vscode-high-contrast .check,
+	body.vscode-high-contrast-light .status .metric,
+	body.vscode-high-contrast-light .empty,
+	body.vscode-high-contrast-light .stale-banner,
+	body.vscode-high-contrast-light .check { color: var(--vscode-foreground); }
+	body.vscode-high-contrast :where(button, input, select, textarea, kbd),
+	body.vscode-high-contrast-light :where(button, input, select, textarea, kbd) { border-color: var(--vscode-contrastBorder, var(--vscode-foreground)); }
+	body.vscode-high-contrast .badge,
+	body.vscode-high-contrast .chip,
+	body.vscode-high-contrast-light .badge,
+	body.vscode-high-contrast-light .chip { background: transparent; border: 1px solid var(--status, currentColor); }
+	body.vscode-high-contrast-light .hint,
+	body.vscode-high-contrast-light .identity,
+	body.vscode-high-contrast-light .tab,
+	body.vscode-high-contrast-light button.icon { color: var(--vscode-foreground); }
+
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after { transition: none !important; animation: none !important; }
+			/* a static bar still says "in flight" without sweeping the pane forever */
+		.progress::after { width: 100%; opacity: 0.5; }
+	}
+</style>
+</head>
+<body>
+	<header class="composer">
+		<div class="send-row">
+			<label class="sr-only" for="method">HTTP method</label>
+			<select id="method" class="method">
+				<option>GET</option><option>POST</option><option>PUT</option>
+				<option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+			</select>
+			<label class="sr-only" for="url">Request URL</label>
+			<input id="url" type="text" placeholder="https://api.example.com/users" spellcheck="false" autocomplete="off" />
+			<button id="send" class="primary" title="Send request (Ctrl+Enter)">Send</button>
+			<button id="cancel" class="icon" title="Cancel request (Esc)" aria-label="Cancel request" hidden>
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+			</button>
+		</div>
+
+		<div class="meta-row">
+			<span class="identity" title="Saved request path">
+				<span id="identity-name">Untitled request</span>
+				<span id="dirty-dot" title="Unsaved changes" aria-hidden="true" hidden>●</span>
+				<span id="dirty-sr" class="sr-only" aria-live="polite"></span>
+			</span>
+			<span class="spacer"></span>
+			<label class="sr-only" for="env">Environment</label>
+			<select id="env" class="compact" title="Variables come from this environment"></select>
+			<button id="save" class="icon" title="Save to collection (Ctrl+S)" aria-label="Save to collection">
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h8l2 2v10H3z" /><path d="M5.5 2v4h5V2M5.5 10h5" /></svg>
+			</button>
+			<span id="more-wrap" class="menu-wrap">
+				<button id="more" class="icon" title="More actions" aria-label="More actions" aria-haspopup="true" aria-expanded="false">
+					<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.2" /><circle cx="8" cy="8" r="1.2" /><circle cx="13" cy="8" r="1.2" /></svg>
+				</button>
+				<div id="more-menu" class="menu" role="menu" aria-label="Request actions" hidden>
+					<button role="menuitem" data-action="new-collection">New collection…</button>
+					<button role="menuitem" data-action="import-curl">Import cURL from clipboard</button>
+					<button role="menuitem" data-action="import-postman">Import Postman collection…</button>
+					<button role="menuitem" data-action="import-openapi">Import OpenAPI…</button>
+					<button role="menuitem" data-action="export-curl">Copy as cURL</button>
+					<button role="menuitem" data-action="edit-envs">Edit environments…</button>
+					<button role="menuitem" data-action="reload">Reload request</button>
+				</div>
+			</span>
+		</div>
+	</header>
+
+	<div id="notice" class="notice" hidden></div>
+	<p id="notice-live" class="sr-only" aria-live="polite"></p>
+	<div id="send-progress" class="progress" hidden aria-hidden="true"></div>
+
+	<section class="request" id="request-pane">
+		<nav class="tabs" role="tablist" aria-label="Request">
+			<button class="tab active" role="tab" id="tab-headers" aria-selected="true" aria-controls="pane-headers" tabindex="0" data-pane="headers">Headers<span class="count" id="header-count"></span></button>
+			<button class="tab" role="tab" id="tab-body" aria-selected="false" aria-controls="pane-body" tabindex="-1" data-pane="body">Body<span class="dot" id="body-dot" hidden></span></button>
+			<button class="tab" role="tab" id="tab-auth" aria-selected="false" aria-controls="pane-auth" tabindex="-1" data-pane="auth">Auth<span class="dot" id="auth-dot" hidden></span></button>
+			<button class="tab" role="tab" id="tab-code" aria-selected="false" aria-controls="pane-code" tabindex="-1" data-pane="code">Code</button>
+			<button class="tab" role="tab" id="tab-scripts" aria-selected="false" aria-controls="pane-scripts" tabindex="-1" data-pane="scripts">Scripts<span class="dot" id="scripts-dot" hidden></span></button>
+			<button class="tab" role="tab" id="tab-socket" aria-selected="false" aria-controls="pane-socket" tabindex="-1" data-pane="socket">Socket<span class="dot" id="socket-dot" hidden></span></button>
+		</nav>
+
+		<div class="panes">
+			<div class="pane active" id="pane-headers" role="tabpanel" tabindex="0" aria-label="Headers">
+				<div id="headers"></div>
+				<span class="row">
+					<button class="ghost add" id="add-header">+ Add header</button>
+					<span id="header-warn" class="chip bad" hidden>Duplicate names — the last one wins</span>
+				</span>
+			</div>
+
+			<div class="pane" id="pane-body" role="tabpanel" tabindex="0" aria-label="Body">
+				<div class="row">
+					<label class="sr-only" for="body-type">Body type</label>
+					<select id="body-type" class="compact">
+						<option value="none">No body</option>
+						<option value="json">JSON</option>
+						<option value="text">Text</option>
+						<option value="xml">XML</option>
+						<option value="html">HTML</option>
+						<option value="urlencoded">Form URL-encoded</option>
+						<option value="multipart">Multipart form-data</option>
+						<option value="binary">Binary file</option>
+					</select>
+					<span id="ct-hint" class="hint"></span>
+					<span id="json-bad" class="chip bad" hidden>Invalid JSON</span>
+					<label id="pretty-wrap" class="check">
+						<input type="checkbox" id="pretty-toggle" checked /> Prettify JSON
+					</label>
+				</div>
+
+				<label class="sr-only" for="body">Request body</label>
+				<textarea id="body" rows="10" spellcheck="false"></textarea>
+
+				<div class="sub" id="urlencoded-pane">
+					<div id="urlencoded-rows"></div>
+					<button class="ghost add" id="add-urlencoded">+ Add field</button>
+				</div>
+
+				<div class="sub" id="multipart-pane">
+					<div id="mp-rows"></div>
+					<button class="ghost add" id="add-mp">+ Add field</button>
+					<div id="mp-files"></div>
+					<button class="ghost add" id="add-mp-file">+ Add file</button>
+				</div>
+
+				<div class="sub" id="binary-pane">
+					<div class="row">
+						<button class="secondary" id="pick-binary">Choose file…</button>
+						<span id="binary-name" class="hint">No file selected</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="pane" id="pane-auth" role="tabpanel" tabindex="0" aria-label="Auth">
+				<div class="row">
+					<label class="sr-only" for="auth-type">Auth type</label>
+					<select id="auth-type" class="compact">
+						<option value="none">No auth</option>
+						<option value="bearer">Bearer token</option>
+						<option value="basic">Basic</option>
+						<option value="apikey">API key</option>
+						<option value="oauth2-cc">OAuth2 — client credentials</option>
+						<option value="oauth2-ac">OAuth2 — authorization code</option>
+					</select>
+					<span id="auth-bad" class="chip bad" hidden>Incomplete — request will send without auth</span>
+					<span id="auth-hint" class="hint"></span>
+				</div>
+
+				<div class="sub" id="auth-bearer">
+					<div class="kv"><input id="bearer-token" placeholder="Token or {{token}}" spellcheck="false" aria-label="Token" /></div>
+				</div>
+
+				<div class="sub" id="auth-basic">
+					<div class="kv">
+						<input id="basic-user" placeholder="Username" spellcheck="false" aria-label="Username" />
+						<input id="basic-pass" type="password" placeholder="Password" spellcheck="false" aria-label="Password" />
+					</div>
+				</div>
+
+				<div class="sub" id="auth-apikey">
+					<div class="kv">
+						<input id="apikey-name" placeholder="Header or query parameter name" spellcheck="false" aria-label="API key name" />
+						<input id="apikey-value" placeholder="Value or {{var}}" spellcheck="false" aria-label="API key value" />
+						<select id="apikey-in" class="compact" aria-label="API key location"><option value="header">Header</option><option value="query">Query</option></select>
+					</div>
+				</div>
+
+				<div class="sub" id="auth-cc">
+					<div class="fields">
+						<label><span>Token URL</span><input id="cc-url" placeholder="https://idp.example.com/oauth/token" spellcheck="false" /></label>
+						<label><span>Client ID</span><input id="cc-id" spellcheck="false" /></label>
+						<label><span>Client secret</span><input id="cc-secret" type="password" spellcheck="false" /></label>
+						<label><span>Scope</span><input id="cc-scope" placeholder="optional" spellcheck="false" /></label>
+					</div>
+				</div>
+
+				<div class="sub" id="auth-ac">
+					<div class="fields">
+						<label><span>Authorize URL</span><input id="ac-auth-url" placeholder="https://idp.example.com/oauth/authorize" spellcheck="false" /></label>
+						<label><span>Token URL</span><input id="ac-url" placeholder="https://idp.example.com/oauth/token" spellcheck="false" /></label>
+						<label><span>Client ID</span><input id="ac-id" spellcheck="false" /></label>
+						<label><span>Client secret</span><input id="ac-secret" type="password" spellcheck="false" /></label>
+						<label><span>Scope</span><input id="ac-scope" placeholder="optional" spellcheck="false" /></label>
+						<label><span>Redirect URI</span><input id="ac-redirect" placeholder="http://localhost:8765/callback" spellcheck="false" /></label>
+					</div>
+				</div>
+			</div>
+
+			<div class="pane" id="pane-code" role="tabpanel" tabindex="0" aria-label="Code snippet">
+				<div class="row">
+					<label class="sr-only" for="snippet-lang">Language</label>
+					<select id="snippet-lang" class="compact">
+						<option value="curl">cURL</option>
+						<option value="fetch">JavaScript fetch</option>
+						<option value="python">Python requests</option>
+						<option value="go">Go</option>
+					</select>
+					<span id="snippet-status" class="hint"></span>
+					<span class="spacer"></span>
+					<button class="secondary" id="snippet-copy" title="Copy to clipboard">Copy</button>
+				</div>
+				<pre id="snippet-out" class="snippet"></pre>
+			</div>
+
+			<div class="pane" id="pane-scripts" role="tabpanel" tabindex="0" aria-label="Scripts">
+				<label class="field-label" for="pre-script">Pre-request <span class="hint">runs first · may change <code>request</code> and <code>vars</code></span></label>
+				<textarea id="pre-script" rows="5" spellcheck="false" placeholder="// e.g. request.headers['X-Trace'] = 'abc';"></textarea>
+				<label class="field-label" for="test-script">Tests <span class="hint">run after the response · <code>expect(response.status).to.equal(200)</code></span></label>
+				<textarea id="test-script" rows="5" spellcheck="false" placeholder="expect(response.status).to.equal(200);"></textarea>
+				<div id="script-results" class="results"></div>
+			</div>
+
+			<div class="pane" id="pane-socket" role="tabpanel" tabindex="0" aria-label="Socket">
+				<div class="row">
+					<label class="sr-only" for="socket-mode">Protocol</label>
+					<select id="socket-mode" class="compact" aria-label="Protocol">
+						<option value="ws">WebSocket</option>
+						<option value="sse">Server-Sent Events</option>
+					</select>
+					<input id="socket-url" placeholder="ws://localhost:3000/socket" spellcheck="false" aria-label="Socket URL" />
+					<button id="socket-toggle">Connect</button>
+					<button id="socket-reconnect" class="secondary" hidden>Reconnect</button>
+					<span id="socket-state" class="hint" aria-live="polite"></span>
+				</div>
+				<div class="row" id="socket-send-row" hidden>
+					<input id="socket-message" placeholder="Message to send ({{vars}} work)" spellcheck="false" aria-label="Message" />
+					<button class="secondary" id="socket-send">Send</button>
+				</div>
+				<pre id="socket-log" class="snippet"></pre>
+			</div>
+		</div>
+	</section>
+
+	<div id="splitter" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Resize request and response panes"
+		aria-valuemin="120"></div>
+
+	<section id="response" aria-label="Response">
+		<div id="empty-state" class="empty">
+			<strong>Send a request to see the response</strong>
+			<span>Paste a URL above and press <kbd>Enter</kbd>. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> sends from anywhere in the pane.</span>
+			<span>Use <code>{{name}}</code> for environment variables, <code>:id</code> for path values, and save requests into a collection to keep them.</span>
+		</div>
+
+		<div id="status" class="status" hidden></div>
+		<div id="stale-banner" class="stale-banner" hidden>
+			<span>Showing the <b>previous</b> response — the last request failed.</span>
+		</div>
+		<div id="context-line" class="stale-banner context-note" hidden>
+			<span>Last <b>HTTP</b> response — the socket log above is separate.</span>
+		</div>
+		<!-- announcements live outside the visual row: unhiding and filling a node in the same task
+		     is unreliable for screen readers -->
+		<p id="status-live" class="sr-only" aria-live="polite"></p>
+		<p id="scripts-live" class="sr-only" aria-live="polite"></p>
+
+		<div class="response-bar" id="res-tabs" hidden>
+			<span class="strip-label" aria-hidden="true">Response</span>
+			<div class="tabs response-tabs" role="tablist" aria-label="Response">
+				<button class="tab active" role="tab" id="rtab-body" aria-selected="true" aria-controls="body-out" tabindex="0" data-rpane="rbody">Body</button>
+				<button class="tab" role="tab" id="rtree-tab" aria-selected="false" aria-controls="tree-out" tabindex="-1" data-rpane="rtree" title="Collapsible JSON tree">Tree</button>
+				<button class="tab" role="tab" id="rtab-hdrs" aria-selected="false" aria-controls="res-hdrs" tabindex="-1" data-rpane="rhdrs">Headers</button>
+			</div>
+			<span class="spacer"></span>
+			<span class="search">
+				<svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>
+				<input id="res-search" placeholder="Find in body" spellcheck="false" aria-label="Find in response body" />
+				<span id="res-count" class="hint" aria-live="polite"></span>
+			</span>
+			<span class="actions">
+			<button class="icon" id="copy-body" title="Copy body" aria-label="Copy response body">
+				<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1" /><path d="M10.5 5.5V3a1 1 0 0 0-1-1H3.5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1H5.5" /></svg>
+			</button>
+			<button class="icon" id="copy-hdrs" title="Copy headers" aria-label="Copy response headers">
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h8" /></svg>
+			</button>
+			<button class="icon" id="save-body" title="Save body to file" aria-label="Save response body to a file">
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3l3-3M3 13h10" /></svg>
+			</button>
+			</span>
+		</div>
+
+		<pre id="body-out" class="outs" role="tabpanel" aria-labelledby="rtab-body" tabindex="0" hidden></pre>
+		<div id="tree-out" class="outs" role="tabpanel" aria-labelledby="rtree-tab" tabindex="0" hidden></div>
+		<div id="res-hdrs" class="outs headers-out" role="tabpanel" aria-labelledby="rtab-hdrs" tabindex="0" hidden></div>
+	</section>
+
+<script>
+	const vscode = acquireVsCodeApi();
+	const $ = (id) => document.getElementById(id);
+	/** Unsaved edits. Declared here because the state-restore block below can set it. */
+	let dirty = false;
+
+	// --- tabs ---
+	const requestTabs = [...document.querySelectorAll('.tab[data-pane]')];
+	const responseTabs = [...document.querySelectorAll('.tab[data-rpane]')];
+
+	function selectTab(tabs, tab) {
+		for (const other of tabs) {
+			other.classList.toggle('active', other === tab);
+			other.setAttribute('aria-selected', String(other === tab));
+			other.tabIndex = other === tab ? 0 : -1;
+		}
+	}
+
+	/** Standard tablist keyboard model: arrows move, Home/End jump, only the active tab is tabbable. */
+	function onTabKeydown(all, event) {
+		// hidden tabs stay out of the ring: focusing one would select a pane with no visible tab
+		const tabs = all.filter((t) => !t.hidden);
+		const index = tabs.indexOf(event.target);
+		if (index === -1) { return; }
+		const last = tabs.length - 1;
+		let next;
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { next = index === last ? 0 : index + 1; }
+		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { next = index === 0 ? last : index - 1; }
+		else if (event.key === 'Home') { next = 0; }
+		else if (event.key === 'End') { next = last; }
+		else { return; }
+		event.preventDefault();
+		tabs[next].focus();
+		tabs[next].click();
+	}
+
+	requestTabs.forEach((t) => {
+		t.addEventListener('keydown', (e) => onTabKeydown(requestTabs, e));
+		t.addEventListener('click', () => {
+			selectTab(requestTabs, t);
+			document.querySelectorAll('.pane').forEach((p) => p.classList.remove('active'));
+			t.classList.add('active');
+			$('pane-' + t.dataset.pane).classList.add('active');
+			if (t.dataset.pane === 'code') { requestSnippet(); }
+			refreshStatusScripts();
+			// the Socket tab adds its own log above the response; label the older pane or it
+			// reads as socket traffic
+			syncContextLine();
+		});
+	});
+	responseTabs.forEach((t) => {
+		t.addEventListener('keydown', (e) => onTabKeydown(responseTabs, e));
+		t.addEventListener('click', () => {
+			selectTab(responseTabs, t);
+			$('body-out').hidden = t.dataset.rpane !== 'rbody';
+			$('tree-out').hidden = t.dataset.rpane !== 'rtree';
+			$('res-hdrs').hidden = t.dataset.rpane !== 'rhdrs';
+			// search only looks at the body: disable it rather than count matches you cannot see
+			syncSearchScope(t.dataset.rpane === 'rbody');
+			if (t.dataset.rpane === 'rtree') { renderTree(); }
+		});
+	});
+
+	// --- environment switcher (variables live in .asterisk/.environments.json) ---
+	const NEW_ENV = '__new__';
+	let envs = { active: '', names: [] };
+
+	function renderEnvs(state) {
+		envs = { active: state.active || '', names: state.names || [] };
+		const select = $('env');
+		select.innerHTML = '';
+		const add = (value, label) => {
+			const option = document.createElement('option');
+			option.value = value;
+			option.textContent = label;
+			select.appendChild(option);
+		};
+		add('', 'No environment');
+		envs.names.forEach((name) => add(name, name));
+		add(NEW_ENV, '+ New environment…');
+		select.value = envs.active;
+	}
+
+	$('env').addEventListener('change', () => {
+		const picked = $('env').value;
+		// The host prompts for a name and answers with a fresh list; show the old value meanwhile.
+		if (picked === NEW_ENV) { $('env').value = envs.active; }
+		vscode.postMessage({ type: 'setEnv', name: picked });
+	});
+
+	// --- key/value rows (headers, urlencoded, multipart fields) ---
+	function addKvRow(containerId, k = '', v = '', kp = 'Header', vp = 'Value') {
+		const row = document.createElement('div');
+		row.className = 'kv-row';
+		row.innerHTML =
+			'<input class="hk" placeholder="' + kp + '" spellcheck="false" aria-label="' + kp + ' name" />' +
+			'<input class="hv" placeholder="' + vp + '" spellcheck="false" aria-label="' + kp + ' value" />' +
+			'<button class="icon hdel" title="Remove ' + kp.toLowerCase() + '" aria-label="Remove ' + kp.toLowerCase() + '">' +
+			'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg></button>';
+		row.querySelector('.hk').value = k;
+		row.querySelector('.hv').value = v;
+		row.querySelector('.hdel').addEventListener('click', () => { row.remove(); persist(); refreshChrome(); });
+		$(containerId).appendChild(row);
+		return row;
+	}
+
+	function collectKv(containerId) {
+		const out = [];
+		document.querySelectorAll('#' + containerId + ' .kv-row').forEach((r) => {
+			const key = r.querySelector('.hk').value.trim();
+			const value = r.querySelector('.hv').value;
+			if (key) out.push({ key, value });
+		});
+		return out;
+	}
+
+	/** Names that would collide when the header rows become an object (last one wins silently). */
+	function duplicateHeaders() {
+		const seen = new Set();
+		const dupes = new Set();
+		for (const { key } of collectKv('headers')) {
+			if (!key) { continue; }
+			if (seen.has(key.toLowerCase())) { dupes.add(key); }
+			seen.add(key.toLowerCase());
+		}
+		return [...dupes];
+	}
+
+	function collectHeaders() {
+		const out = {};
+		collectKv('headers').forEach((f) => { out[f.key] = f.value.trim(); });
+		return out;
+	}
+
+	$('add-header').addEventListener('click', () => addKvRow('headers'));
+	$('add-urlencoded').addEventListener('click', () => addKvRow('urlencoded-rows', '', '', 'Field', 'Value'));
+	$('add-mp').addEventListener('click', () => addKvRow('mp-rows', '', '', 'Field', 'Value'));
+
+	// --- body type ---
+	const CT_HINT = {
+		none: '',
+		json: 'Content-Type: application/json',
+		text: 'Content-Type: text/plain',
+		xml: 'Content-Type: application/xml',
+		html: 'Content-Type: text/html',
+		urlencoded: 'Content-Type: application/x-www-form-urlencoded',
+		multipart: 'Content-Type: multipart/form-data (boundary auto)',
+		binary: 'Content-Type: application/octet-stream',
+	};
+	const RAW_TYPES = ['json', 'text', 'xml', 'html'];
+	const PLACEHOLDER = {
+		json: '{ "key": "value" }',
+		xml: '<root></root>',
+		html: '<p>hello</p>',
+		text: 'Raw text',
+	};
+
+	function bodyType() { return $('body-type').value; }
+
+	function syncBodyPanes() {
+		const t = bodyType();
+		$('body').hidden = !RAW_TYPES.includes(t);
+		$('urlencoded-pane').classList.toggle('active', t === 'urlencoded');
+		$('multipart-pane').classList.toggle('active', t === 'multipart');
+		$('binary-pane').classList.toggle('active', t === 'binary');
+		$('pretty-wrap').hidden = t !== 'json';
+		$('ct-hint').textContent = CT_HINT[t] || '';
+		$('body').placeholder = PLACEHOLDER[t] || '';
+		$('json-bad').hidden = true;
+	}
+
+	$('body-type').addEventListener('change', () => { syncBodyPanes(); persist(); });
+
+	// Pretty-print toggle: reformat on blur, complain instead of silently mangling bad JSON.
+	$('body').addEventListener('blur', () => {
+		if (bodyType() !== 'json' || !$('pretty-toggle').checked) return;
+		const text = $('body').value.trim();
+		if (!text) return;
+		try {
+			$('body').value = JSON.stringify(JSON.parse(text), null, 2);
+			$('json-bad').hidden = true;
+			persist();
+		} catch {
+			$('json-bad').hidden = false;
+		}
+	});
+
+	// --- file picking (native dialog lives in the extension host) ---
+	let pickSeq = 0;
+	const pickWaiters = new Map();
+
+	function pickFile(cb) {
+		const id = ++pickSeq;
+		pickWaiters.set(id, cb);
+		vscode.postMessage({ type: 'pickFile', id });
+	}
+
+	let binaryFile = { path: '', name: '' };
+
+	$('pick-binary').addEventListener('click', () =>
+		pickFile((picked) => {
+			binaryFile = { path: picked.path, name: picked.name };
+			$('binary-name').textContent = picked.name;
+			$('binary-name').title = picked.path;
+			persist();
+		})
+	);
+
+	function addFileRow(f = {}) {
+		const row = document.createElement('div');
+		row.className = 'kv-row file-row';
+		row.innerHTML =
+			'<input class="hk" placeholder="Field" spellcheck="false" aria-label="File field name" />' +
+			'<button class="secondary pick">Choose file…</button>' +
+			'<span class="fname">No file</span>' +
+			'<button class="icon hdel" title="Remove file" aria-label="Remove file">' +
+			'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg></button>';
+		row.querySelector('.hk').value = f.key || '';
+		row.dataset.path = f.path || '';
+		row.querySelector('.fname').textContent = f.name || 'No file';
+		row.querySelector('.fname').title = f.path || '';
+		row.querySelector('.pick').addEventListener('click', () =>
+			pickFile((picked) => {
+				row.dataset.path = picked.path;
+				row.querySelector('.fname').textContent = picked.name;
+				row.querySelector('.fname').title = picked.path;
+				persist();
+			})
+		);
+		row.querySelector('.hdel').addEventListener('click', () => { row.remove(); persist(); refreshChrome(); });
+		$('mp-files').appendChild(row);
+		return row;
+	}
+
+	$('add-mp-file').addEventListener('click', () => addFileRow());
+
+	function collectFiles() {
+		const out = [];
+		document.querySelectorAll('#mp-files .file-row').forEach((r) => {
+			const key = r.querySelector('.hk').value.trim();
+			if (key && r.dataset.path) out.push({ key, path: r.dataset.path });
+		});
+		return out;
+	}
+
+	function collectBody() {
+		const t = bodyType();
+		if (t === 'urlencoded') {
+			const fields = collectKv('urlencoded-rows');
+			return fields.length ? { type: 'urlencoded', fields } : { type: 'none' };
+		}
+		if (t === 'multipart') {
+			const fields = collectKv('mp-rows');
+			const files = collectFiles();
+			return fields.length || files.length ? { type: 'multipart', fields, files } : { type: 'none' };
+		}
+		if (t === 'binary') {
+			return binaryFile.path ? { type: 'binary', path: binaryFile.path } : { type: 'none' };
+		}
+		if (RAW_TYPES.includes(t)) {
+			const content = $('body').value;
+			return content.trim() ? { type: 'raw', format: t, content } : { type: 'none' };
+		}
+		return { type: 'none' };
+	}
+
+	// --- sockets (WebSocket / SSE are owned by the extension host) ---
+	let socketOpen = false;
+	let socketSeenOpen = false;
+
+	function socketMode() { return $('socket-mode').value; }
+
+	function socketLog(text, kind) {
+		const line = document.createElement('span');
+		line.className = 'line' + (kind ? ' ' + kind : '');
+		line.textContent = text + String.fromCharCode(10);
+		$('socket-log').appendChild(line);
+		$('socket-log').scrollTop = $('socket-log').scrollHeight;
+	}
+
+	function socketState(open, label, connecting, failed) {
+		socketOpen = open;
+		if (open) { socketSeenOpen = true; }
+		$('socket-toggle').textContent = connecting ? 'Cancel' : open ? 'Disconnect' : 'Connect';
+		// never `disabled`: a hang would leave no way out and the focused control would be removed
+		$('socket-state').textContent = connecting ? 'opening a connection…' : open ? (socketMode() === 'sse' ? 'streaming' : 'connected') : (failed || socketSeenOpen) ? 'disconnected' : '';
+		$('socket-reconnect').hidden = !(failed || socketSeenOpen) || open || connecting;
+		// two buttons that both mean "open a connection" is one too many
+		$('socket-toggle').hidden = !open && !connecting && (failed || socketSeenOpen);
+		setDot('socket-dot', open);
+		$('socket-send-row').hidden = !(open && socketMode() === 'ws');
+		if (label) { socketLog(label, 'system'); }
+		if (failed && label) { $('socket-state').textContent = 'connection failed'; }
+	}
+
+	$('socket-reconnect').addEventListener('click', () => {
+		$('socket-log').textContent = '';
+		socketState(false, '', true);
+		vscode.postMessage({ type: 'socketConnect', mode: socketMode(), url: $('socket-url').value.trim() });
+	});
+
+	$('socket-toggle').addEventListener('click', () => {
+		// clicking while a connection is still opening cancels it
+		if ($('socket-toggle').textContent === 'Cancel') {
+			vscode.postMessage({ type: 'socketClose' });
+			socketState(false, '— cancelled');
+			return;
+		}
+		if (socketOpen) {
+			vscode.postMessage({ type: 'socketClose' });
+			socketState(false, '— disconnected');
+			return;
+		}
+		$('socket-log').textContent = '';
+		const url = $('socket-url').value.trim();
+		if (!url) {
+			$('socket-url').focus();
+			showNotice('Enter a WebSocket or SSE URL first.', 'warn');
+			return;
+		}
+		socketState(false, '', true);
+		vscode.postMessage({ type: 'socketConnect', mode: socketMode(), url });
+	});
+
+	$('socket-send').addEventListener('click', () => {
+		const text = $('socket-message').value;
+		if (!text || !socketOpen) { return; }
+		vscode.postMessage({ type: 'socketSend', text });
+		socketLog('→ ' + text, 'out');
+		$('socket-message').value = '';
+	});
+
+	$('socket-mode').addEventListener('change', () => {
+		$('socket-send-row').hidden = !(socketOpen && socketMode() === 'ws');
+		$('socket-url').placeholder = socketMode() === 'ws' ? 'ws://localhost:3000/socket' : 'http://localhost:3000/events';
+	});
+
+	// --- code snippets (generated in the extension host) ---
+	function snippetLang() { return $('snippet-lang').value; }
+
+	function requestSnippet() {
+		vscode.postMessage({ type: 'snippet', lang: snippetLang(), request: collectRequest() });
+	}
+
+	let snippetTimer;
+	let snippetTimer2;
+	document.addEventListener('input', (e) => {
+		if (!$('pane-code').classList.contains('active')) { return; }
+		if (e.target && e.target.closest && !e.target.closest('#request-pane') && !e.target.closest('.composer')) { return; }
+		clearTimeout(snippetTimer2);
+		snippetTimer2 = setTimeout(requestSnippet, 200);
+	});
+	$('snippet-lang').addEventListener('change', requestSnippet);
+	$('snippet-copy').addEventListener('click', () => {
+		const text = $('snippet-out').textContent || '';
+		if (!text) { return; }
+		vscode.postMessage({ type: 'copy', text });
+		// confirm where the user is looking, not only in the status bar
+		$('snippet-status').textContent = 'copied';
+		clearTimeout(snippetTimer);
+		snippetTimer = setTimeout(() => { $('snippet-status').textContent = ''; }, 1500);
+	});
+
+	// --- auth ---
+	const AUTH_HINTS = {
+		none: '',
+		bearer: 'Authorization: Bearer <token>',
+		basic: 'Authorization: Basic base64(user:pass)',
+		apikey: 'Added as a header or query parameter',
+		'oauth2-cc': 'Token fetched and cached until it expires',
+		'oauth2-ac': 'Browser opens once, then the refresh token takes over',
+	};
+	const AUTH_PANES = {
+		bearer: 'auth-bearer',
+		basic: 'auth-basic',
+		apikey: 'auth-apikey',
+		'oauth2-cc': 'auth-cc',
+		'oauth2-ac': 'auth-ac',
+	};
+
+	function authType() { return $('auth-type').value; }
+
+	function syncAuthPanes() {
+		const t = authType();
+		Object.entries(AUTH_PANES).forEach(([type, id]) => $(id).classList.toggle('active', type === t));
+		$('auth-hint').textContent = AUTH_HINTS[t] || '';
+		updateAuthBadge();
+	}
+
+	/** A selected-but-incomplete auth config would silently send unauthenticated; say so. */
+	function updateAuthBadge() {
+		const incomplete = authType() !== 'none' && collectAuth().type === 'none';
+		$('auth-bad').hidden = !incomplete;
+	}
+
+	$('auth-type').addEventListener('change', () => { syncAuthPanes(); persist(); });
+	$('pane-auth').addEventListener('input', updateAuthBadge);
+	$('pane-auth').addEventListener('change', updateAuthBadge);
+
+	function collectAuth() {
+		const t = authType();
+		if (t === 'bearer') {
+			const token = $('bearer-token').value.trim();
+			return token ? { type: 'bearer', token } : { type: 'none' };
+		}
+		if (t === 'basic') {
+			return $('basic-user').value || $('basic-pass').value
+				? { type: 'basic', username: $('basic-user').value, password: $('basic-pass').value }
+				: { type: 'none' };
+		}
+		if (t === 'apikey') {
+			const key = $('apikey-name').value.trim();
+			return key ? { type: 'apikey', key, value: $('apikey-value').value, in: $('apikey-in').value } : { type: 'none' };
+		}
+		if (t === 'oauth2-cc') {
+			const tokenUrl = $('cc-url').value.trim();
+			const clientId = $('cc-id').value.trim();
+			if (!tokenUrl || !clientId) { return { type: 'none' }; }
+			return { type: 'oauth2-cc', tokenUrl, clientId, clientSecret: $('cc-secret').value, scope: $('cc-scope').value.trim() || undefined };
+		}
+		if (t === 'oauth2-ac') {
+			const authUrl = $('ac-auth-url').value.trim();
+			const tokenUrl = $('ac-url').value.trim();
+			const clientId = $('ac-id').value.trim();
+			if (!authUrl || !tokenUrl || !clientId) { return { type: 'none' }; }
+			const redirectUri = $('ac-redirect').value.trim() || undefined;
+			return { type: 'oauth2-ac', authUrl, tokenUrl, clientId, clientSecret: $('ac-secret').value, scope: $('ac-scope').value.trim() || undefined, redirectUri };
+		}
+		return { type: 'none' };
+	}
+
+	/** Fill the Auth tab from a saved request. */
+	function applyAuth(auth) {
+		const a = auth || { type: 'none' };
+		$('auth-type').value = a.type in AUTH_HINTS ? a.type : 'none';
+		$('bearer-token').value = a.type === 'bearer' ? a.token : '';
+		$('basic-user').value = a.type === 'basic' ? a.username : '';
+		$('basic-pass').value = a.type === 'basic' ? a.password : '';
+		$('apikey-name').value = a.type === 'apikey' ? a.key : '';
+		$('apikey-value').value = a.type === 'apikey' ? a.value : '';
+		$('apikey-in').value = a.type === 'apikey' ? a.in : 'header';
+		$('cc-url').value = a.type === 'oauth2-cc' ? a.tokenUrl : '';
+		$('cc-id').value = a.type === 'oauth2-cc' ? a.clientId : '';
+		$('cc-secret').value = a.type === 'oauth2-cc' ? a.clientSecret : '';
+		$('cc-scope').value = (a.type === 'oauth2-cc' && a.scope) || '';
+		$('ac-auth-url').value = a.type === 'oauth2-ac' ? a.authUrl : '';
+		$('ac-url').value = a.type === 'oauth2-ac' ? a.tokenUrl : '';
+		$('ac-id').value = a.type === 'oauth2-ac' ? a.clientId : '';
+		$('ac-secret').value = a.type === 'oauth2-ac' ? a.clientSecret : '';
+		$('ac-scope').value = (a.type === 'oauth2-ac' && a.scope) || '';
+		$('ac-redirect').value = (a.type === 'oauth2-ac' && a.redirectUri) || '';
+		syncAuthPanes();
+	}
+
+	function collectRequest() {
+		return {
+			method: $('method').value,
+			url: $('url').value.trim(),
+			headers: collectHeaders(),
+			body: collectBody(),
+			auth: collectAuth(),
+			preRequest: $('pre-script').value.trim() || undefined,
+			test: $('test-script').value.trim() || undefined,
+		};
+	}
+
+	// --- send ---
+	$('send').addEventListener('click', () => {
+		// a second send is allowed: the host aborts the in-flight request and starts the new one
+		const url = $('url').value.trim();
+		if (!url) {
+			$('url').focus();
+			showNotice('Enter a URL first — it must start with http:// or https://', 'warn');
+			return;
+		}
+		startSend();
+		vscode.postMessage({ type: 'send', request: collectRequest() });
+	});
+
+	$('cancel').addEventListener('click', () => cancelSend());
+
+	// --- save to collection (the extension asks for a snapshot, then prompts for a target) ---
+	$('save').addEventListener('click', () => {
+		vscode.postMessage({ type: 'save', request: collectRequest() });
+	});
+
+	$('url').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') $('send').click();
+	});
+	refreshChrome();
+
+	window.addEventListener('message', (e) => {
+		const msg = e.data;
+		if (msg.type === 'response') {
+			renderResponse(msg.response);
+			renderScripts(msg.script);
+			if (!msg.script && msg.response && /Pre-request script|Script error/i.test(msg.response.error || '')) {
+				renderScripts({ error: msg.response.error, logs: [], assertions: [] });
+			}
+		}
+		if (msg.type === 'load') applyRequest(msg.request);
+		if (msg.type === 'envs') renderEnvs(msg);
+		if (msg.type === 'requestSnapshot') vscode.postMessage({ type: 'save', request: collectRequest() });
+		if (msg.type === 'exportCurl') vscode.postMessage({ type: 'curl', request: collectRequest() });
+		if (msg.type === 'socketState') {
+			const failed = msg.state !== 'open' && !!msg.error;
+			// log the transition, not just the open: a bare "— connected" over a Connect button reads wrong
+			socketState(msg.state === 'open', msg.text || (msg.state === 'open' ? '— connected' : (failed ? '— connection failed: ' + msg.error : '— disconnected')), false, failed);
+
+		}
+		if (msg.type === 'socketMessage') {
+			socketLog((msg.direction === 'out' ? '→ ' : '← ') + msg.text, msg.direction === 'out' ? 'out' : 'in');
+		}
+		if (msg.type === 'identity') {
+			$('identity-name').textContent = msg.name || 'Untitled request';
+			$('identity-name').title = msg.path || 'Not saved yet — press Ctrl+S to keep it';
+			filePath = msg.path || '';
+			// the host says whether this identity came from a save (clean) or a restore (still dirty)
+			if (msg.dirty) { markDirty(); } else { markClean(); }
+			persist();
+		}
+		if (msg.type === 'notice') {
+			showNotice(msg.text, msg.kind || 'info');
+		}
+		if (msg.type === 'snippet') {
+			$('snippet-out').textContent = msg.text || '';
+		}
+		if (msg.type === 'filePicked') {
+			const cb = pickWaiters.get(msg.id);
+			pickWaiters.delete(msg.id);
+			if (cb && msg.path) cb(msg);
+		}
+	});
+
+	/** Fill the editor from a saved request (collection click). Mirrors the restore path. */
+	function applyRequest(req) {
+		// loading a request while one is in flight: stop it, or the late response would be painted
+		// onto the request that replaced it
+		if (sending) {
+			vscode.postMessage({ type: 'cancel' });
+			finishSend();
+		}
+		$('method').value = req.method || 'GET';
+		$('url').value = req.url || '';
+		$('headers').innerHTML = '';
+		Object.entries(req.headers || {}).forEach(([k, v]) => addKvRow('headers', k, v));
+		if (!$('headers').children.length) addKvRow('headers');
+
+		$('urlencoded-rows').innerHTML = '';
+		$('mp-rows').innerHTML = '';
+		$('mp-files').innerHTML = '';
+		$('body').value = '';
+		binaryFile = { path: '', name: '' };
+		$('binary-name').textContent = 'No file selected';
+		$('binary-name').title = '';
+
+		const body = req.body || { type: 'none' };
+		if (body.type === 'raw') {
+			$('body-type').value = body.format;
+			$('body').value = body.content;
+		} else if (body.type === 'urlencoded') {
+			$('body-type').value = 'urlencoded';
+			(body.fields || []).forEach((f) => addKvRow('urlencoded-rows', f.key, f.value, 'Field', 'Value'));
+		} else if (body.type === 'multipart') {
+			$('body-type').value = 'multipart';
+			(body.fields || []).forEach((f) => addKvRow('mp-rows', f.key, f.value, 'Field', 'Value'));
+			(body.files || []).forEach((f) => addFileRow({ key: f.key, path: f.path, name: fileLabel(f.path) }));
+		} else if (body.type === 'binary') {
+			$('body-type').value = 'binary';
+			binaryFile = { path: body.path, name: fileLabel(body.path) };
+			$('binary-name').textContent = binaryFile.name;
+			$('binary-name').title = body.path;
+		} else {
+			$('body-type').value = 'none';
+		}
+		markClean();
+		lastScript = null;
+		if ($('status-scripts')) { $('status-scripts').innerHTML = ''; }
+		if (lastResponse) {
+			// the response pane still holds the previous request's body; say so rather than
+			// leaving Copy/Save pointing at data the identity line no longer describes
+			$('status').hidden = true;
+			$('stale-banner').hidden = false;
+			$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — you loaded another request.';
+		}
+		applyAuth(req.auth);
+		$('pre-script').value = req.preRequest || '';
+		$('test-script').value = req.test || '';
+		$('script-results').innerHTML = '';
+		syncBodyPanes();
+		refreshChrome();
+		persist();
+		if ($('pane-code').classList.contains('active')) { requestSnippet(); }
+	}
+
+	let lastScript = null;
+
+	/** A one-glance assertion verdict on the status line, mirroring the Scripts tab. */
+	function refreshStatusScripts() {
+		const slot = $('status-scripts');
+		if (!slot) { return; }
+		slot.innerHTML = '';
+		if (!lastScript) { return; }
+		const assertions = lastScript.assertions || [];
+		const failed = assertions.filter((a) => !a.passed);
+		// the Scripts tab shows the failing message in full; do not print it twice side by side
+		const paneOpen = $('pane-scripts').classList.contains('active');
+		if (lastScript.error) {
+			const chip = document.createElement('span');
+			chip.className = 'badge err';
+			chip.textContent = 'script error';
+			chip.title = lastScript.error;
+			slot.appendChild(chip);
+			return;
+		}
+		if (!assertions.length) { return; }
+		const chip = document.createElement('span');
+		chip.className = 'badge ' + (failed.length ? 'err' : 'ok');
+		chip.textContent = failed.length ? failed.length + ' failed' : 'tests passed';
+		chip.title = failed.length
+			? failed.map((f) => f.name + (f.message ? ': ' + f.message : '')).join(String.fromCharCode(10))
+			: assertions.length + ' assertions passed';
+		slot.appendChild(chip);
+		if (failed.length && !paneOpen) {
+			// the first failure is the useful one; the rest stay in the Scripts tab
+			const detail = document.createElement('span');
+			detail.className = 'metric prose';
+			detail.textContent = failed[0].message || failed[0].name;
+			slot.appendChild(detail);
+		}
+	}
+
+	/** Pass/fail strip for the assertions the tests ran. */
+	function renderScripts(result) {
+		const box = $('script-results');
+		box.innerHTML = '';
+		lastScript = result || null;
+		refreshStatusScripts();
+		$('scripts-live').textContent = result
+			? (result.error ? 'Script error: ' + result.error
+				: ((result.assertions || []).filter((a) => !a.passed).length
+					? (result.assertions || []).filter((a) => !a.passed).length + ' of ' + (result.assertions || []).length + ' assertions failed'
+					: (result.assertions || []).length + ' assertions passed'))
+			: '';
+		if (!result) { return; }
+		const assertions = result.assertions || [];
+		const failed = assertions.filter((a) => !a.passed);
+		if (result.error) {
+			const badge = document.createElement('span');
+			badge.className = 'badge err';
+			badge.textContent = 'Script error';
+			box.appendChild(badge);
+			const message = document.createElement('span');
+			message.className = 'fail';
+			message.textContent = result.error;
+			box.appendChild(message);
+		} else if (assertions.length) {
+			const badge = document.createElement('span');
+			badge.className = 'badge ' + (failed.length ? 'err' : 'ok');
+			badge.textContent = failed.length
+				? failed.length + ' of ' + assertions.length + ' assertions failed'
+				: assertions.length + ' assertions passed';
+			box.appendChild(badge);
+		}
+		for (const failure of failed) {
+			const line = document.createElement('span');
+			line.className = 'fail';
+			line.textContent = failure.name + (failure.message ? ' — ' + failure.message : '');
+			box.appendChild(line);
+		}
+		const origin = result.origin;
+		const scopeFiles = [...new Set([...(origin?.test ?? []), ...(origin?.preRequest ?? [])])].filter((f) => f !== 'this request');
+		if (scopeFiles.length) {
+			const scope = document.createElement('span');
+			scope.className = 'hint';
+			scope.title = scopeFiles.join(String.fromCharCode(10));
+			scope.textContent = 'also ran ' + scopeFiles.length + ' scoped ' + (scopeFiles.length === 1 ? 'script' : 'scripts');
+			box.appendChild(scope);
+		}
+		if (result.logs && result.logs.length) {
+			const logs = document.createElement('details');
+			const summary = document.createElement('summary');
+			summary.textContent = 'logs (' + result.logs.length + ')';
+			logs.appendChild(summary);
+			const pre = document.createElement('pre');
+			pre.textContent = result.logs.join(String.fromCharCode(10));
+			logs.appendChild(pre);
+			box.appendChild(logs);
+		}
+	}
+
+	function pretty(text) {
+		try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
+	}
+
+	// --- splitter: drag or arrow keys; remembered per workspace ---
+	(function splitter() {
+		const root = document.documentElement;
+		let dragging = false;
+		const handle = $('splitter');
+		const paneMaxRatio = () => parseFloat(window.getComputedStyle(root).getPropertyValue('--pane-max-ratio')) || 0.78;
+		// the request pane's own height: #response.top also contains the composer, the gaps and the
+		// splitter itself, which made the announced value roughly double the truth
+		const requestHeight = () => Math.round($('request-pane').getBoundingClientRect().height);
+		// the separator speaks in pane height, so report what is actually rendered, not the ceiling
+		const describe = () => {
+			const height = Math.max(0, requestHeight());
+			handle.setAttribute('aria-valuenow', String(height));
+			handle.setAttribute('aria-valuetext', `Request pane height ${height} pixels`);
+		};
+		const apply = (px) => {
+			const max = Math.round(window.innerHeight * paneMaxRatio());
+			const value = Math.max(120, Math.min(max, Math.round(px)));
+			root.style.setProperty('--composer-max', value + 'px');
+			handle.setAttribute('aria-valuemax', String(max));
+			return value;
+		};
+
+		// advertised maximum exists before the first drag, so the separator is never value-less
+		handle.setAttribute('aria-valuemax', String(Math.round(window.innerHeight * paneMaxRatio())));
+		const saved = vscode.getState();
+		if (saved && saved.composerMax) { apply(saved.composerMax); }
+		describe();
+
+		let moved = false;
+		handle.addEventListener('pointerdown', (e) => {
+			dragging = true;
+			moved = false;
+			handle.setPointerCapture(e.pointerId);
+			handle.dataset.drag = 'true';
+			document.body.classList.add('splitter-drag');
+			e.preventDefault();
+		});
+		handle.addEventListener('pointermove', (e) => {
+			if (!dragging) { return; }
+			// move the seam by the pointer delta from its own top, so a wrapped header cannot skew it
+			moved = true;
+			apply(requestHeight() + (e.clientY - handle.getBoundingClientRect().top));
+			describe();
+		});
+		const stop = () => {
+			if (!dragging) { return; }
+			dragging = false;
+			handle.dataset.drag = 'false';
+			document.body.classList.remove('splitter-drag');
+			describe();
+			// a click with no drag must not pin the pane to its current height
+			if (moved) {
+				const state = vscode.getState() || {};
+				vscode.setState({ ...state, composerMax: requestHeight() });
+			}
+		};
+		const refresh = () => {
+			handle.setAttribute('aria-valuemax', String(Math.round(window.innerHeight * paneMaxRatio())));
+			describe();
+		};
+		window.addEventListener('resize', refresh);
+		if (typeof ResizeObserver === 'function') { new ResizeObserver(refresh).observe($('request-pane')); }
+		handle.addEventListener('pointerup', stop);
+		handle.addEventListener('pointercancel', stop);
+		handle.addEventListener('keydown', (e) => {
+			const step = e.shiftKey ? 48 : 16;
+			if (e.key === 'ArrowUp') { apply(requestHeight() - step); e.preventDefault(); }
+			if (e.key === 'ArrowDown') { apply(requestHeight() + step); e.preventDefault(); }
+			describe();
+			const state = vscode.getState() || {};
+			vscode.setState({ ...state, composerMax: requestHeight() });
+		});
+	})();
+
+	// --- notice strip: the panel's own status, instead of toast-only ---
+	let noticeTimer;
+	function showNotice(text, kind = 'info', sticky = false) {
+		const box = $('notice');
+		box.textContent = text;
+		box.dataset.kind = kind;
+		box.hidden = false;
+		$('notice-live').textContent = text;
+		clearTimeout(noticeTimer);
+		if (!sticky) {
+			noticeTimer = setTimeout(() => { box.hidden = true; $('notice-live').textContent = ''; }, 6000);
+		}
+	}
+
+	// --- more menu ---
+	function closeMenu() {
+		$('more-menu').hidden = true;
+		$('more').setAttribute('aria-expanded', 'false');
+	}
+	const menuItems = () => [...$('more-menu').querySelectorAll('[role="menuitem"]')];
+	$('more').addEventListener('click', (e) => {
+		e.stopPropagation();
+		const open = $('more-menu').hidden;
+		$('more-menu').hidden = !open;
+		$('more').setAttribute('aria-expanded', String(open));
+		// a menu that opens should land the keyboard inside it, or the roles are a lie
+		if (open) { menuItems()[0].focus(); }
+	});
+	// roving focus: arrows move, Home/End jump, Escape returns to the trigger
+	$('more-menu').addEventListener('keydown', (e) => {
+		const items = menuItems();
+		const at = items.indexOf(document.activeElement);
+		const last = items.length - 1;
+		let next;
+		if (e.key === 'ArrowDown') { next = at === last ? 0 : at + 1; }
+		else if (e.key === 'ArrowUp') { next = at <= 0 ? last : at - 1; }
+		else if (e.key === 'Home') { next = 0; }
+		else if (e.key === 'End') { next = last; }
+		else if (e.key === 'Tab') { closeMenu(); return; }
+		else { return; }
+		e.preventDefault();
+		items[next].focus();
+	});
+	$('more-menu').addEventListener('click', (e) => {
+		const action = e.target && e.target.dataset && e.target.dataset.action;
+		if (!action) { return; }
+		closeMenu();
+		$('more').focus();
+		runMenuAction(action);
+	});
+	document.addEventListener('click', (e) => {
+		if (!$('more-wrap').contains(e.target)) { closeMenu(); }
+	});
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape' && !$('more-menu').hidden) {
+			closeMenu();
+			$('more').focus();
+			e.preventDefault();
+		}
+	});
+
+	// explicit map: deriving command ids from the action name silently drifted from the host's
+	// allowlist, and a dropped command is a dead menu item nobody hears about
+	const MENU_COMMANDS = {
+		'new-collection': 'asterisk.newCollection',
+		'import-curl': 'asterisk.import.curl',
+		'import-postman': 'asterisk.import.postman',
+		'import-openapi': 'asterisk.import.openapi',
+		'edit-envs': 'asterisk.envs.edit',
+	};
+	function runMenuAction(action) {
+		if (action === 'reload') { vscode.postMessage({ type: 'reload' }); return; }
+		if (action === 'export-curl') { vscode.postMessage({ type: 'curl', request: collectRequest() }); return; }
+		const command = MENU_COMMANDS[action];
+		if (command) { vscode.postMessage({ type: 'command', command }); }
+	}
+
+	// --- keyboard: send, save, cancel, tab cycling ---
+	document.addEventListener('keydown', (e) => {
+		const mod = e.ctrlKey || e.metaKey;
+		if (mod && e.key === 'Enter') {
+			e.preventDefault();
+			$('send').click();
+			return;
+		}
+		if (mod && (e.key === 's' || e.key === 'S')) {
+			e.preventDefault();
+			$('save').click();
+			return;
+		}
+		// one key, one action: the menu handler above already claimed this Escape
+		if (e.key === 'Escape' && sending && !e.defaultPrevented && $('more-menu').hidden) {
+			e.preventDefault();
+			cancelSend();
+		}
+	});
+
+	let sending = false;
+	function cancelSend() {
+		vscode.postMessage({ type: 'cancel' });
+		finishSend();
+		$('status').hidden = false;
+		$('status').innerHTML = '<span class="badge warn">cancelled</span>' +
+			'<span class="metric prose">the request was aborted — send again when ready.</span>';
+		// whatever body is still on screen belongs to an earlier request: label it, like the error path
+		$('stale-banner').hidden = !lastResponse;
+		$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — this request was cancelled.';
+		announce('Request cancelled');
+	}
+
+	function startSend() {
+		sending = true;
+		// keep Send in the layout and clickable: a native `disabled` attribute would make the
+		// Enter/Ctrl+Enter resend path inert, and a disabled control also loses focus
+		$('send').setAttribute('aria-disabled', 'true');
+		$('send').setAttribute('aria-busy', 'true');
+		$('send-progress').hidden = false;
+		$('cancel').hidden = false;
+		announce('Sending request…');
+		if (lastResponse) {
+			$('stale-banner').hidden = false;
+			$('stale-banner').firstElementChild.innerHTML = 'Showing the <b>previous</b> response — a new request is in flight.';
+		}
+		$('status').hidden = false;
+		$('status').innerHTML = '<span class="metric prose">sending…</span>';
+		$('empty-state').hidden = true;
+	}
+	function finishSend() {
+		sending = false;
+		$('send').removeAttribute('aria-disabled');
+		$('send').removeAttribute('aria-busy');
+		$('send-progress').hidden = true;
+		$('cancel').hidden = true;
+	}
+
+	// --- response extras: timing breakdown, tree, search, copy, save ---
+	/** Every failure gets a next step, not just a reason. */
+	function recoveryHint(message) {
+		const text = String(message || '');
+		if (/Invalid URL/i.test(text)) { return text + ' — fix the method/URL row above.'; }
+		if (/timed out/i.test(text)) { return text + ' — the server did not answer in time; retry, or raise the asterisk.timeoutMs setting.'; }
+		if (/changed the request origin/i.test(text)) { return text + ' — remove the URL rewrite from the pre-request script.'; }
+		if (/Pre-request script|Script error|script threw/i.test(text)) { return text + ' — fix the script in the Scripts tab.'; }
+		if (/ENOTFOUND|EAI_AGAIN/i.test(text)) { return text + ' — the host name does not resolve; check the spelling, DNS, or a proxy.'; }
+		if (/ECONNREFUSED/i.test(text)) { return text + ' — nothing is listening on that port; start the server or fix the port.'; }
+		if (/CERT|TLS|SSL|self.signed|UNABLE_TO_VERIFY/i.test(text)) { return text + ' — the certificate is not trusted; use http:// locally or fix the cert.'; }
+		if (/fetch failed|network|ECONNRESET|socket hang up/i.test(text)) { return text + ' — check the host is running and the URL is right.'; }
+		if (/Cannot read file/i.test(text)) { return text + ' — re-pick the file in the Body tab.'; }
+		if (/OAuth|token/i.test(text)) { return text + ' — check the Auth tab (client id/secret, token URL).'; }
+		return text;
+	}
+
+	/** What to do about a non-2xx status, in one clause. Empty for 2xx/3xx. */
+	function statusHint(status) {
+		if (status === 401 || status === 403) { return '— check the Auth tab'; }
+		if (status === 404) { return '— check the path and env variables'; }
+		if (status === 429) { return '— rate limited, retry later'; }
+		if (status >= 500) { return '— the server failed, retry'; }
+		return '';
+	}
+
+	let lastResponse = null;
+	let resJson;                 // parsed body, or undefined when it is not JSON
+	let resText = '';            // escaped body text used by the body pane
+
+	const TREE_NODE_CAP = 2000;
+
+	function tryParse(text) {
+		try { return { value: JSON.parse(text) }; } catch { return {}; }
+	}
+
+	function treeType(value) {
+		if (value === null) { return 'null'; }
+		if (Array.isArray(value)) { return '[' + value.length + ']'; }
+		if (typeof value === 'object') { return '{' + Object.keys(value).length + '}'; }
+		return typeof value;
+	}
+
+	function treePreview(value) {
+		if (value === null) { return 'null'; }
+		if (Array.isArray(value)) { return '[' + value.length + ']'; }
+		if (typeof value === 'object') { return '{' + Object.keys(value).length + '}'; }
+		const text = String(value);
+		return text.length > 60 ? text.slice(0, 60) + '…' : text;
+	}
+
+	/** Build a collapsible tree with native <details> — no state to keep in sync. */
+	function treeNodes(value, key, depth, budget) {
+		const box = document.createElement(depth === 0 ? 'div' : 'details');
+		if (depth === 0) { box.className = 'troot'; }
+		const isContainer = value !== null && typeof value === 'object';
+		if (isContainer) {
+			if (depth > 0) { box.open = depth < 2; }
+			const summary = document.createElement('summary');
+			summary.innerHTML = key === null ? '' : '<span class="tkey">' + esc(key) + '</span>: ';
+			const type = document.createElement('span');
+			type.className = 'ttype';
+			type.textContent = treeType(value);
+			summary.appendChild(type);
+			box.appendChild(summary);
+			const entries = Array.isArray(value) ? value.map((v, i) => [String(i), v]) : Object.entries(value);
+			for (const [k, v] of entries) {
+				if (budget.left <= 0) {
+					const cut = document.createElement('div');
+					cut.className = 'ttype';
+					cut.textContent = '… truncated, response too large';
+					box.appendChild(cut);
+					break;
+				}
+				budget.left--;
+				box.appendChild(treeNodes(v, k, depth + 1, budget));
+			}
+			return box;
+		}
+		const leaf = document.createElement('div');
+		leaf.className = 'tleaf';
+		
+		leaf.innerHTML = (key === null ? '' : '<span class="tkey">' + esc(key) + '</span>: ') +
+			'<span class="tval">' + esc(treePreview(value)) + '</span> ' +
+			'<span class="ttype">' + treeType(value) + '</span>';
+		return leaf;
+	}
+
+	function renderTree() {
+		const out = $('tree-out');
+		out.innerHTML = '';
+		if (!lastResponse) { out.textContent = 'Send a request first.'; return; }
+		if (resJson === undefined) { out.textContent = 'Response body is not JSON.'; return; }
+		out.appendChild(treeNodes(resJson, null, 0, { left: TREE_NODE_CAP }));
+	}
+
+	function clearSearch() {
+		$('res-search').value = '';
+		$('res-count').textContent = '';
+		$('body-out').textContent = resText;
+	}
+
+	/** Literal, case-insensitive highlight. Works on escaped text, so nothing can inject markup. */
+	const SEARCH_BODY_CAP = 1_000_000;
+
+	function applySearch() {
+		const query = $('res-search').value;
+		if (!query) { clearSearch(); return; }
+		if (resText.length > SEARCH_BODY_CAP) {
+			$('res-count').textContent = 'too large to highlight';
+			return;
+		}
+		// Match on the raw body and escape each slice: searching the escaped text would report
+		// hits on `amp`/`lt`/`quot` because every `&`, `<` and `"` turns into an entity.
+		const lower = resText.toLowerCase();
+		const needle = query.toLowerCase();
+		let out = '';
+		let at = 0;
+		let hits = 0;
+		for (;;) {
+			const found = lower.indexOf(needle, at);
+			if (found === -1) { break; }
+			out += esc(resText.slice(at, found)) + '<mark>' + esc(resText.slice(found, found + needle.length)) + '</mark>';
+			at = found + needle.length;
+			hits++;
+		}
+		out += esc(resText.slice(at));
+		$('body-out').innerHTML = out;
+		$('res-count').textContent = hits ? hits + (hits === 1 ? ' match' : ' matches') : 'no matches';
+	}
+
+	function responseHeadersText(r) {
+		return Object.entries(r.headers || {}).map(([k, v]) => k + ': ' + v).join(String.fromCharCode(10));
+	}
+
+	function suggestedFileName(r) {
+		const type = (r.headers && r.headers['content-type']) || '';
+		if (/json/.test(type)) { return 'response.json'; }
+		if (/html/.test(type)) { return 'response.html'; }
+		if (/xml/.test(type)) { return 'response.xml'; }
+		return 'response.txt';
+	}
+
+	let searchTimer = undefined;
+	$('res-search').addEventListener('input', () => {
+		clearTimeout(searchTimer);
+		// typing in a multi-MB body must not freeze the panel: wait for a pause
+		searchTimer = setTimeout(applySearch, 120);
+	});
+	$('copy-body').addEventListener('click', () => {
+		// copy exactly what the user sees (pretty-printed for JSON), not the raw wire text
+		if (lastResponse) { vscode.postMessage({ type: 'copy', text: $('body-out').textContent }); }
+	});
+	$('copy-hdrs').addEventListener('click', () => {
+		if (lastResponse) { vscode.postMessage({ type: 'copy', text: responseHeadersText(lastResponse) }); }
+	});
+	$('save-body').addEventListener('click', () => {
+		if (lastResponse) {
+			vscode.postMessage({ type: 'saveResponse', body: lastResponse.body, name: suggestedFileName(lastResponse) });
+		}
+	});
+
+	/** The find box searches the body only; on the other tabs it would count invisible matches. */
+	function announce(text) {
+		$('status-live').textContent = text;
+	}
+
+	/** When the Socket tab is open, say that the pane below is the last HTTP response. */
+	function syncContextLine() {
+		$('context-line').hidden = !lastResponse || !$('pane-socket').classList.contains('active');
+	}
+
+	function syncSearchScope(active) {
+		// readOnly, not disabled: disabling the focused element moves focus to <body>
+		$('res-search').readOnly = !active;
+		$('res-search').placeholder = active ? 'Find in body' : 'Find in body (Body tab)';
+		if (!active) { $('res-count').textContent = ''; }
+	}
+
+	function renderResponse(r) {
+		finishSend();
+		$('empty-state').hidden = true;
+
+		if (r.error) {
+			// the host never forwards an aborted request, so a cancel never reaches here; the button
+			// path (cancelSend) owns that copy. Keep a neutral rendition for a host-sent cancel.
+			const cancelled = /cancel/i.test(r.error);
+			$('status').hidden = false;
+		$('status').innerHTML =
+			'<span class="badge ' + (cancelled ? 'warn' : 'err') + '">' + (cancelled ? 'cancelled' : 'Failed') + '</span>' +
+				'<span class="metric' + (cancelled ? '' : ' fail') + '">' + esc(cancelled ? 'Request cancelled — send again when ready.' : recoveryHint(r.error)) + '</span>';
+			announce(cancelled ? 'Request cancelled' : 'Request failed: ' + r.error);
+			// keep the last good response on screen so the user can still copy from it, but say
+			// plainly that it is the previous one — never a silent mix
+			$('stale-banner').hidden = !lastResponse;
+				$('stale-banner').firstElementChild.innerHTML = cancelled
+				? 'Showing the <b>previous</b> response — this request was cancelled.'
+				: 'Showing the <b>previous</b> response — the last request failed.';
+			return;
+		}
+		$('stale-banner').hidden = true;
+
+		const cls = r.status >= 200 && r.status < 300 ? 'ok' : r.status >= 400 ? 'err' : 'warn';
+		const ct = r.headers['content-type'] || '';
+		$('status').hidden = false;
+		const ttfb = typeof r.ttfbMs === 'number' ? r.ttfbMs : 0;
+		const download = Math.max(0, r.timeMs - ttfb);
+		$('status').innerHTML =
+			'<span class="badge ' + cls + '">' + r.status + ' ' + esc(r.statusText) + '</span>' +
+			'<span class="metric" title="' + ttfb + ' ms time to first byte + ' + download + ' ms download of ' + fmtSize(r.size) + '">' +
+			'<b>' + r.timeMs + '</b> ms · <b>' + fmtSize(r.size) + '</b></span>' +
+			'<span class="metric">' + esc(ct || 'no content-type') + '</span>' +
+			'<span class="metric prose" id="status-detail">' + esc(statusHint(r.status)) + '</span>' +
+			'<span class="metric" id="status-scripts"></span>';
+		announce(`Response ${r.status} ${r.statusText}, ${r.timeMs} milliseconds, ${fmtSize(r.size)}`);
+
+		lastResponse = r;
+		// parse once: `resText` (pretty for JSON) is derived from the same value
+		const parsedJson = /json/.test(ct) ? tryParse(r.body) : {};
+		resJson = parsedJson.value;
+		resText = resJson === undefined ? r.body : pretty(r.body);
+		$('rtree-tab').hidden = resJson === undefined;
+		$('body-out').textContent = resText;
+		// every response lands on Body: leaving Headers/Tree selected would render two panes at once
+		selectTab(responseTabs, $('rtab-body'));
+		$('body-out').hidden = false;
+		$('tree-out').hidden = true;
+		$('res-hdrs').hidden = true;
+		syncSearchScope(true);
+		syncContextLine();
+		clearSearch();
+
+		$('res-hdrs').textContent = Object.entries(r.headers)
+			.map(([k, v]) => k + ': ' + v)
+			.join('\n');
+
+		$('res-tabs').hidden = false;
+		refreshStatusScripts();
+	}
+
+	function fmtSize(n) {
+		if (n < 1024) return n + ' B';
+		if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+		return (n / 1024 / 1024).toFixed(1) + ' MB';
+	}
+	function esc(s) {
+		return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+	}
+
+	// restore state across panel hide/show
+	const saved = vscode.getState();
+	if (saved) {
+		$('method').value = saved.method || 'GET';
+		$('url').value = saved.url || '';
+		$('pretty-toggle').checked = saved.pretty !== false;
+		// migration: M1 saved a bare raw body string with no body type
+		$('body-type').value = saved.bodyType || (saved.body ? 'text' : 'none');
+		$('body').value = saved.bodyType ? saved.raw || '' : saved.body || '';
+		if (saved.headers && saved.headers.length) saved.headers.forEach(([k, v]) => addKvRow('headers', k, v));
+		(saved.urlencoded || []).forEach((f) => addKvRow('urlencoded-rows', f.key, f.value, 'Field', 'Value'));
+		(saved.multipart?.fields || []).forEach((f) => addKvRow('mp-rows', f.key, f.value, 'Field', 'Value'));
+		(saved.multipart?.files || []).forEach((f) => addFileRow(f));
+		applyAuth(saved.auth);
+		$('pre-script').value = saved.preRequest || '';
+		$('test-script').value = saved.test || '';
+		if (saved.socketUrl) { $('socket-url').value = saved.socketUrl; }
+		if (saved.socketMode) { $('socket-mode').value = saved.socketMode; }
+		if (saved.binary?.path) {
+			binaryFile = saved.binary;
+			$('binary-name').textContent = saved.binary.name;
+			$('binary-name').title = saved.binary.path;
+		}
+	}
+	syncBodyPanes();
+	syncAuthPanes();
+	if (!$('headers').children.length) addKvRow('headers');
+	refreshChrome();
+	// the host does not survive a reload; hand it back the file this panel was editing
+	if (saved && saved.filePath) { vscode.postMessage({ type: 'restorePath', path: saved.filePath }); }
+	// restored editor state has not been written to disk: say so, or the next load discards it
+	if (saved && (saved.filePath || saved.url)) { markDirty(); }
+
+	/** Header count badge, dirty marker, and the "which saved request is this" label. */
+	function setDot(id, on) {
+		const dot = $(id);
+		if (!dot) { return; }
+		dot.hidden = !on;
+		dot.dataset.on = on ? 'true' : 'false';
+	}
+
+	function refreshChrome() {
+		const count = collectKv('headers').length;
+		$('header-count').textContent = count ? String(count) : '';
+		const active = envs.active || '';
+		$('env').title = active ? `Environment: ${active}` : 'No environment — variables will not resolve';
+		setDot('body-dot', collectBody().type !== 'none');
+		setDot('auth-dot', collectAuth().type !== 'none');
+		setDot('scripts-dot', !!($('pre-script').value.trim() || $('test-script').value.trim()));
+		// headers become an object on the wire, so a repeated name silently disappears
+		const dupes = duplicateHeaders();
+		$('header-warn').hidden = !dupes.length;
+		$('header-warn').title = dupes.join(', ');
+	}
+
+	function markDirty() {
+		if (!dirty) {
+			dirty = true;
+			$('dirty-dot').hidden = false;
+			$('dirty-sr').textContent = 'Unsaved changes';
+			vscode.postMessage({ type: 'dirty', value: true });
+		}
+	}
+	function markClean() {
+		if (dirty) { vscode.postMessage({ type: 'dirty', value: false }); }
+		dirty = false;
+		$('dirty-dot').hidden = true;
+		$('dirty-sr').textContent = '';
+	}
+
+	let filePath = '';
+
+	function persist() {
+		vscode.setState({
+			// merge, never replace: the splitter writes composerMax into the same state object
+			...(vscode.getState() || {}),
+			method: $('method').value,
+			url: $('url').value,
+			headers: Object.entries(collectHeaders()),
+			bodyType: bodyType(),
+			raw: $('body').value,
+			pretty: $('pretty-toggle').checked,
+			urlencoded: collectKv('urlencoded-rows'),
+			multipart: { fields: collectKv('mp-rows'), files: collectFiles().map((f) => ({ ...f, name: fileLabel(f.path) })) },
+			auth: collectAuth(),
+			preRequest: $('pre-script').value,
+			test: $('test-script').value,
+			binary: binaryFile,
+			filePath,
+			socketUrl: $('socket-url').value,
+			socketMode: $('socket-mode').value,
+		});
+	}
+
+	function fileLabel(path) {
+		const name = path.split(/[\\/]/).pop();
+		return name || path;
+	}
+
+	// only messages that can change the request need a state write: a streaming socket posts one
+	// message per frame, and serialising the whole body for each of them is pure waste
+	const PERSISTING = new Set(['response', 'load', 'identity', 'envs']);
+	window.addEventListener('message', (msg) => {
+		if (!msg || PERSISTING.has(msg.type)) { persist(); }
+	});
+	// only edits to the request are edits: searching a response or typing a socket frame is not
+	// the composer and the request tabs are the request; the response pane and the socket session are not
+	const isRequestEdit = (el) => !!(el && el.closest && !el.matches('#env') &&
+		!el.closest('#response') && !el.closest('#pane-socket'));
+	document.addEventListener('input', (e) => {
+		persist();
+		if (isRequestEdit(e.target)) { markDirty(); }
+		refreshChrome();
+	});
+	document.addEventListener('change', (e) => {
+		persist();
+		if (isRequestEdit(e.target)) { markDirty(); }
+		refreshChrome();
+	});
+
+	renderEnvs({ names: [] });
+
+	// Tell the extension the editor is live, so a queued "load request" can be delivered.
+	vscode.postMessage({ type: 'ready' });
+</script>
+</body>
+</html>
