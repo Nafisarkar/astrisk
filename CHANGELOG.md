@@ -16,6 +16,12 @@ are listed in [FEATURES.md](FEATURES.md).
 
 - Any method, header grid with duplicate-name detection, and typed bodies: raw JSON/text/XML/HTML,
   form URL-encoded, multipart form-data, and binary upload.
+- The JSON body editor highlights syntax with the host's own token colours, pairs `{}`, `[]` and
+  quotes, wraps a selection, steps over a closer that is already there, deletes an empty pair on
+  Backspace, keeps the indent on Enter, and formats with <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>,
+  on paste of valid JSON, and on blur while the Prettify toggle is on. Formatting refuses to run
+  when it would lose information (integers past 2^53, duplicate keys, `1e400`), because a blur is
+  not a licence to rewrite a payload.
 - Per-type body editors: raw textarea with a pretty-print toggle, key/value grids, native file
   picking. Files are read from disk at send time, so request state stays small and re-openable.
 - Automatic `Content-Type` per body type (a user-supplied value always wins; multipart always lets

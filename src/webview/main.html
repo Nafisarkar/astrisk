@@ -70,6 +70,60 @@
 		min-height: var(--ctrl-h);
 	}
 	textarea { font-family: var(--mono); font-size: 0.94em; resize: vertical; line-height: 1.5; }
+	/* ---------- JSON editor: a highlight layer behind a transparent textarea ---------- */
+	/* ponytail: no editor library — the value stays a real <textarea>, so selection, IME, undo and
+	   form semantics stay the browser's job instead of ours. */
+	.code-editor { display: grid; }
+	.code-editor > textarea,
+	.code-editor > .hl {
+		grid-area: 1 / 1;
+		margin: 0;
+		padding: 6px 8px;
+		font-family: var(--mono);
+		font-size: 0.94em;
+		line-height: 1.5;
+		letter-spacing: 0;
+		tab-size: 2;
+		white-space: pre;
+		/* an editor font with ligatures would merge `->` differently in a textarea than in a pre */
+		font-variant-ligatures: none;
+		border: 1px solid transparent;
+		border-radius: var(--radius);
+	}
+	/* the highlight layer is a code block, not an inline token chip: no inherited chip background */
+	.code-editor > .hl code { background: none; padding: 0; border: 0; border-radius: 0; font: inherit; color: inherit; }
+	.code-editor > .hl {
+		overflow: hidden;
+		pointer-events: none;
+		background: var(--vscode-input-background);
+		color: var(--vscode-input-foreground, var(--vscode-foreground));
+	}
+	.code-editor > textarea {
+		overflow: auto;
+		resize: vertical;
+		background: transparent;
+		color: transparent;
+		caret-color: var(--vscode-editorCursor-foreground, var(--vscode-foreground));
+	}
+	/* the textarea paints above the layer, so an opaque selection would hide the coloured glyphs */
+	.code-editor > textarea::selection {
+		color: transparent;
+		background: color-mix(in srgb, var(--vscode-editor-selectionBackground, #264f78) 45%, transparent);
+	}
+	/* forced colours ignore `color: transparent`, which would paint every character twice */
+	@media (forced-colors: active) {
+		.code-editor > .hl { display: none; }
+		.code-editor > textarea { color: CanvasText; }
+	}
+	.code-editor > textarea:focus { border-color: var(--accent); }
+	.code-editor:not(.hl-on) > .hl { display: none; }
+	.code-editor:not(.hl-on) > textarea { color: var(--vscode-input-foreground, var(--vscode-foreground)); }
+	/* token colours are the host's own JSON token colours, so the editor matches every theme */
+	.hl .t-k { color: var(--vscode-symbolIcon-propertyForeground, var(--vscode-debugTokenExpression-name, #9cdcfe)); }
+	.hl .t-s { color: var(--vscode-debugTokenExpression-string, var(--vscode-symbolIcon-stringForeground, #ce9178)); }
+	.hl .t-n { color: var(--vscode-debugTokenExpression-number, var(--vscode-symbolIcon-numberForeground, #b5cea8)); }
+	.hl .t-l { color: var(--vscode-debugTokenExpression-boolean, var(--vscode-symbolIcon-booleanForeground, #569cd6)); }
+	.hl .t-p { color: var(--vscode-descriptionForeground, var(--vscode-foreground)); }
 	select { cursor: pointer; }
 	::placeholder { color: var(--vscode-input-placeholderForeground, var(--dim)); opacity: 1; }
 
@@ -671,7 +725,10 @@
 				</div>
 
 				<label class="sr-only" for="body">Request body</label>
-				<textarea id="body" rows="10" spellcheck="false"></textarea>
+				<div class="code-editor" id="body-editor">
+					<pre class="hl" id="body-hl" aria-hidden="true"><code></code></pre>
+					<textarea id="body" rows="10" spellcheck="false" wrap="off" aria-describedby="json-bad"></textarea>
+				</div>
 
 				<div class="sub" id="urlencoded-pane">
 					<div id="urlencoded-rows"></div>
@@ -1005,9 +1062,245 @@
 
 	function bodyType() { return $('body-type').value; }
 
+	// ---------- JSON editor: highlighting, auto-pairing, auto-format ----------
+	const HL_LIMIT = 200000; // ponytail: one scan per keystroke; past 200 KB colouring costs more than it gives
+	const PAIRS = { '{': '}', '[': ']', '"': '"' };
+	const INDENT = '  ';
+	const CLOSERS = '}"]';
+	const JSON_TOKEN = /"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\b(?:true|false|null)\b|[{}\[\],:]/g;
+	const PUNCT = /^[{}\[\],:]$/;
+
+	const escapeHtml = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+
+	/** A string token is a key when the next non-space character is a colon. */
+	function isKeyAt(src, end) {
+		let i = end;
+		while (i < src.length && /\s/.test(src[i])) { i += 1; }
+		return src[i] === ':';
+	}
+
+	/** Colourise JSON. Anything the scanner does not recognise stays plain, so broken JSON still reads. */
+	function highlightJson(src) {
+		let out = '';
+		let last = 0;
+		let m;
+		JSON_TOKEN.lastIndex = 0;
+		while ((m = JSON_TOKEN.exec(src))) {
+			if (m.index > last) { out += escapeHtml(src.slice(last, m.index)); }
+			const tok = m[0];
+			let cls = 't-p';
+			if (tok[0] === '"') { cls = isKeyAt(src, m.index + tok.length) ? 't-k' : 't-s'; }
+			else if (tok === 'true' || tok === 'false' || tok === 'null') { cls = 't-l'; }
+			else if (!PUNCT.test(tok)) { cls = 't-n'; }
+			out += '<span class="' + cls + '">' + escapeHtml(tok) + '</span>';
+			last = m.index + tok.length;
+		}
+		return out + escapeHtml(src.slice(last));
+	}
+
+	function paintBody() {
+		const on = bodyType() === 'json';
+		$('body-editor').classList.toggle('hl-on', on);
+		if (!on) { return; }
+		const text = $('body').value;
+		const code = $('body-hl').firstElementChild || $('body-hl');
+		// a trailing newline has no line box of its own, so both layers get one appended
+		const tail = text.endsWith('\n') ? '\n' : '';
+		// past the limit there is nothing to colour: textContent is one text node, no HTML parse
+		if (text.length > HL_LIMIT) { code.textContent = text + tail; }
+		else { code.innerHTML = highlightJson(text) + tail; }
+		syncHlScroll();
+	}
+
+	function syncHlScroll() {
+		$('body-hl').scrollTop = $('body').scrollTop;
+		$('body-hl').scrollLeft = $('body').scrollLeft;
+	}
+
+	/**
+	 * Replace [from, to) with `text`. `execCommand` keeps the native undo stack; the splice fallback
+	 * loses it (no DOM without editing commands can avoid that), and the trailing dispatch is what
+	 * repaints and persists either way.
+	 */
+	function replaceRange(from, to, text) {
+		const ta = $('body');
+		ta.focus();
+		ta.setSelectionRange(from, to);
+		let done = false;
+		try { done = !!(document.execCommand && document.execCommand('insertText', false, text)); } catch { done = false; }
+		if (done) { return; }
+		ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+		const caret = from + text.length;
+		ta.setSelectionRange(caret, caret);
+		ta.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	/** Is the character at `pos` escaped by an odd number of backslashes? */
+	function escapedAt(src, pos) {
+		let n = 0;
+		for (let i = pos - 1; i >= 0 && src[i] === '\\'; i -= 1) { n += 1; }
+		return n % 2 === 1;
+	}
+
+	/** Is `pos` inside a JSON string? Backslash parity decides, so `"a\\"` does not end the string. */
+	function inString(src, pos) {
+		let quote = false;
+		for (let i = 0; i < pos; i += 1) {
+			const ch = src[i];
+			if (quote && ch === '\\') { i += 1; continue; }
+			if (ch === '"') { quote = !quote; }
+		}
+		return quote;
+	}
+
+	/** `{`/`[`/`"` pair up (or wrap a selection), Enter keeps the indent, closers step over, Backspace eats an empty pair. */
+	function autoPair(e) {
+		const ta = $('body');
+		const start = ta.selectionStart;
+		const end = ta.selectionEnd;
+		const value = ta.value;
+		const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+		const quoted = inString(value, start);
+		if (e.key === 'Enter') {
+			if (!plain || start !== end) { return false; }
+			const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+			const indent = (/^[ \t]*/.exec(value.slice(lineStart)))[0];
+			e.preventDefault();
+			// only a real, empty `{}` gets the two-line treatment; the same text inside a string does not
+			if (!quoted && ((value[start - 1] === '{' && value[start] === '}') || (value[start - 1] === '[' && value[start] === ']'))) {
+				replaceRange(start, start, '\n' + indent + INDENT + '\n' + indent);
+				const caret = start + 1 + indent.length + INDENT.length;
+				ta.setSelectionRange(caret, caret);
+				return true;
+			}
+			replaceRange(start, end, '\n' + indent);
+			return true;
+		}
+		if (!plain) { return false; }
+		// A closer sitting at the caret is that character's own terminator — including inside a string,
+		// which is where an auto-inserted quote leaves the caret. Step over it, never double it.
+		// Two exceptions: an escaped character is content, and `}`/`]` inside a string are content too.
+		if (start === end && value[start] === e.key && CLOSERS.includes(e.key) &&
+			(!quoted || e.key === '"') && !escapedAt(value, start)) {
+			e.preventDefault();
+			ta.setSelectionRange(start + 1, start + 1);
+			return true;
+		}
+		// An empty pair is deleted whole, string or not: `""` should vanish in one Backspace.
+		if (e.key === 'Backspace' && start > 0 && start === end && PAIRS[value[start - 1]] === value[start]) {
+			e.preventDefault();
+			replaceRange(start - 1, start + 1, '');
+			ta.setSelectionRange(start - 1, start - 1);
+			return true;
+		}
+		// Inside a string only the terminator acts: pairing a brace there would corrupt the value,
+		// and pairing a quote there would eat the escape the user just typed.
+		if (quoted) { return false; }
+		if (!PAIRS[e.key]) { return false; }
+		const close = PAIRS[e.key];
+		const selected = value.slice(start, end);
+		// wrapping `"abc"` in quotes again is never what the user meant
+		if (start !== end && selected.startsWith(e.key) && selected.endsWith(close)) { return false; }
+		e.preventDefault();
+		if (start !== end) { replaceRange(start, end, e.key + selected + close); }
+		else { replaceRange(start, start, e.key + close); }
+		const caret = start === end ? start + 1 : end + 2;
+		ta.setSelectionRange(caret, caret);
+		return true;
+	}
+
+	/** Drop whitespace that is not inside a string, so a format can be proved lossless before it lands. */
+	function stripSpace(src) {
+		let out = '';
+		let quote = false;
+		for (let i = 0; i < src.length; i += 1) {
+			const ch = src[i];
+			if (quote) {
+				out += ch;
+				if (ch === '\\') { out += src[i + 1] || ''; i += 1; } else if (ch === '"') { quote = false; }
+				continue;
+			}
+			if (ch === '"') { quote = true; out += ch; continue; }
+			if (!/\s/.test(ch)) { out += ch; }
+		}
+		return out;
+	}
+
+	/** Move the caret onto a character boundary: half of a surrogate pair is not a caret position. */
+	function safeCaret(text, caret) {
+		const at = Math.min(caret, text.length);
+		return /[\uDC00-\uDFFF]/.test(text[at] || '') ? at - 1 : at;
+	}
+
+	/**
+	 * Pretty-print the body when it parses, flagging the chip only for a parse failure.
+	 * Formatting is skipped when it would lose information — `JSON.parse` truncates integers past
+	 * 2^53, drops a duplicate key, turns `1e400` into `null` — because a blur is not a licence to
+	 * rewrite a payload. `stripSpace` is the test: same tokens, only whitespace differs.
+	 */
+	function formatJson() {
+		const ta = $('body');
+		const text = ta.value.trim();
+		if (!text) { $('json-bad').hidden = true; return false; }
+		let parsed;
+		let pretty;
+		try {
+			parsed = JSON.parse(text);
+			pretty = JSON.stringify(parsed, null, INDENT);
+		} catch {
+			$('json-bad').hidden = false;
+			return false;
+		}
+		$('json-bad').hidden = true;
+		if (pretty === ta.value) { return true; }
+		if (stripSpace(text) !== JSON.stringify(parsed)) { return true; }
+		const caret = safeCaret(pretty, ta.selectionStart);
+		if (document.activeElement === ta) {
+			// an explicit format is one undoable edit and must not scroll the editor
+			const top = ta.scrollTop;
+			replaceRange(0, ta.value.length, pretty);
+			ta.setSelectionRange(caret, caret);
+			ta.scrollTop = top;
+			return true;
+		}
+		// formatting on blur: no focus to keep, and the splice would be undone by the focus move anyway
+		const top = ta.scrollTop;
+		ta.value = pretty;
+		ta.setSelectionRange(caret, caret);
+		ta.dispatchEvent(new Event('input', { bubbles: true }));
+		ta.scrollTop = top;
+		paintBody();
+		return true;
+	}
+
+	$('body').addEventListener('keydown', (e) => {
+		if (bodyType() !== 'json' || e.isComposing) { return; }
+		// Shift+Alt+F is the editor convention for "format"
+		if (e.key === 'F' && e.shiftKey && e.altKey) {
+			e.preventDefault();
+			formatJson();
+			return;
+		}
+		autoPair(e);
+	});
+	// pasting valid JSON lands pretty-printed, because that is what the user meant to send
+	$('body').addEventListener('paste', (e) => {
+		if (bodyType() !== 'json' || !$('pretty-toggle').checked) { return; }
+		const text = e.clipboardData && e.clipboardData.getData('text');
+		if (!text) { return; }
+		let pretty;
+		try { pretty = JSON.stringify(JSON.parse(text.trim()), null, INDENT); } catch { return; }
+		e.preventDefault();
+		replaceRange($('body').selectionStart, $('body').selectionEnd, pretty);
+	});
+	$('body').addEventListener('scroll', syncHlScroll);
+	$('body').addEventListener('input', paintBody);
+
 	function syncBodyPanes() {
 		const t = bodyType();
 		$('body').hidden = !RAW_TYPES.includes(t);
+		$('body-editor').hidden = $('body').hidden;
+		paintBody();
 		$('urlencoded-pane').classList.toggle('active', t === 'urlencoded');
 		$('multipart-pane').classList.toggle('active', t === 'multipart');
 		$('binary-pane').classList.toggle('active', t === 'binary');
@@ -1022,15 +1315,8 @@
 	// Pretty-print toggle: reformat on blur, complain instead of silently mangling bad JSON.
 	$('body').addEventListener('blur', () => {
 		if (bodyType() !== 'json' || !$('pretty-toggle').checked) return;
-		const text = $('body').value.trim();
-		if (!text) return;
-		try {
-			$('body').value = JSON.stringify(JSON.parse(text), null, 2);
-			$('json-bad').hidden = true;
-			persist();
-		} catch {
-			$('json-bad').hidden = false;
-		}
+		formatJson();
+		persist();
 	});
 
 	// --- file picking (native dialog lives in the extension host) ---
