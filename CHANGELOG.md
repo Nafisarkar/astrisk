@@ -89,6 +89,23 @@ are listed in [FEATURES.md](FEATURES.md).
   paint a foreign body.
 - Socket "Connect" was disabled while connecting with no way out of a hung connect; it now reads
   **Cancel**. A failed connection logs once and offers **Reconnect**.
+- Ctrl+Enter in a socket field fired the socket *and* the HTTP request; the document shortcuts now
+  honour IME composition and modifiers.
+- Deleting a header, picking a file or attaching a multipart file never raised the dirty flag, so the
+  host's discard guard never fired and the edit was lost on the next load.
+- The response body could be pushed below the fold by an in-flow notice at the splitter's maximum,
+  with no way to scroll; the ceiling now accounts for the notice.
+- A duplicated header name now says what the wire does (the values are joined) and the panel joins
+  them the same way instead of dropping a row.
+- The Content-Type hint claimed a type for an empty body and for a GET; it qualifies both, and the
+  multipart hint states that the host owns the boundary.
+- The socket log yanked a reader who had scrolled up back to the bottom on every frame; a normal
+  disconnect is no longer painted as a failure.
+- A save from the command palette left the unsaved dot on; the tree's type column sat at the pane
+  edge instead of beside its value.
+- A search above the mark cap deleted the text it did not highlight, and Copy copied the damage.
+- The JSON body editor coloured up to 50 KB that cost ~50 ms per keystroke; the budget is 20 KB and
+  the pane says when colours are off.
 
 ### Changed
 
