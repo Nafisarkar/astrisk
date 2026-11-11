@@ -37,6 +37,7 @@ Round-trip a request and see the response. Nothing else works until this does.
 
 ## M2 · Body types — DONE
 - [x] JSON (with pretty-print toggle)
+- [x] JSON editor: syntax highlighting (host token colours), auto-pairing of `{}`, `[]` and quotes, selection wrapping, closer step-over, Backspace on an empty pair, Enter that keeps the indent and opens `{}` blocks, Shift+Alt+F format, format-on-paste, format-on-blur when the toggle is on
 - [x] Form URL-encoded (key/value grid)
 - [x] Multipart form-data (with file picker)
 - [x] Raw text / XML / HTML
@@ -45,6 +46,8 @@ Round-trip a request and see the response. Nothing else works until this does.
 - [x] Test: each body type serializes correctly to the wire
 
 **Verified:** `bun test` (unit/DOM) and `bun x vscode-test` (in-host).
+
+JSON editor ceilings: highlighted up to 200 KB (past that the text stays plain), no line numbers, no code folding, no multi-caret; auto-pairing and formatting work on the body only, not on the script panes.
 
 Known ceilings: multipart text fields get CRLF line endings (HTML form-data algorithm); files are read whole into memory before sending; a hand-set `Content-Type` is ignored for multipart because fetch owns the boundary.
 

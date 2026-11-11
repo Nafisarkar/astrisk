@@ -32,7 +32,7 @@ function mount(saved?: unknown): Mounted {
 		setState: (s: any) => (state = s),
 	};
 
-	new Function('document', 'window', 'acquireVsCodeApi', script)(win.document, win, () => api);
+	new Function('document', 'window', 'Event', 'acquireVsCodeApi', script)(win.document, win, win.Event, () => api);
 
 	const el = (id: string) => win.document.getElementById(id) as any;
 	const m: Mounted = {
@@ -1374,8 +1374,8 @@ describe('polish round 6: regressions found by review', () => {
 		const win = new Window({ url: 'https://asterisk.test/' });
 		win.document.write(markup);
 		const state: any = { filePath: 'F:/coll/req.json', method: 'POST', url: 'https://x.test', headers: [['A', 'b']] };
-		expect(() => new Function('document', 'window', 'acquireVsCodeApi', script)(
-			win.document, win, () => ({ postMessage: (m: any) => posted.push(m), getState: () => state, setState: (s: any) => Object.assign(state, s) })
+		expect(() => new Function('document', 'window', 'Event', 'acquireVsCodeApi', script)(
+			win.document, win, win.Event, () => ({ postMessage: (m: any) => posted.push(m), getState: () => state, setState: (s: any) => Object.assign(state, s) })
 		)).not.toThrow();
 		expect(posted.some((p) => p.type === 'ready')).toBe(true);
 		expect(posted.some((p) => p.type === 'restorePath')).toBe(true);
