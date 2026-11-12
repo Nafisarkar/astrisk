@@ -1,20 +1,32 @@
-.vscode/**
-test/**
-bunfig.toml
-FEATURES.md
-.vscode-test/**
-src/**
 .gitignore
-.yarnrc
-**/tsconfig.json
-**/eslint.config.mjs
+# sources and tests never ship
+src/**
+test/**
+out/test/**
+.vscode/**
+.vscode-test/**
+node_modules/**
+
+# project files that only matter in the repo
+docs/**
+.impeccable/**
+FEATURES.md
+PRODUCT.md
+DESIGN.md
+CHANGELOG.md
+bunfig.toml
+package-lock.json
+tsconfig.json
+eslint.config.mjs
 **/*.map
 **/*.ts
 **/.vscode-test.*
-out/test/**
-node_modules/**
+.yarnrc
+
+# never ship a package inside a package
 **/*.vsix
 .asterisk/**
+
+# art that isn't referenced by the manifest
 media/icon-512.png
 media/icon-badge.svg
-docs/banner-*.svg

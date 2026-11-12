@@ -6,7 +6,7 @@
 
 <p align="center">
 	<a href="CHANGELOG.md"><img src="https://img.shields.io/badge/0.1_beta-0078d4" alt="0.1 beta"></a>
-	<a href="test"><img src="https://img.shields.io/badge/tests-1016_passing-2ea043" alt="1016 tests passing"></a>
+	<a href="test"><img src="https://img.shields.io/badge/tests-1047_passing-2ea043" alt="1016 tests passing"></a>
 	<a href="package.json"><img src="https://img.shields.io/badge/runtime_deps-0-2ea043" alt="zero runtime dependencies"></a>
 	<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6e7681" alt="MIT licence"></a>
 </p>
