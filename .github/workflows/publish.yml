@@ -26,7 +26,6 @@ jobs:
       - run: bun install
       - run: bun run compile
       - run: bun test
-      - run: bun test test/site.test.ts
       - name: the vsix must build before it is published
         run: bun x @vscode/vsce package --out /tmp/asterisk.vsix
       - uses: actions/upload-artifact@v4
