@@ -6,7 +6,7 @@ The built world of `docs/index.html`, recorded after the fact. Product truth liv
 
 ## World
 
-A dark instrument panel with one lit region. The ground is `#080a0e`; the hero is a soft blue luminous field (four large radial stops, blurred once, then the fibre canvas over them at 32% in `screen` blend). Nothing else glows. Below the hero the page turns into a hairline spec sheet: rules at `rgba(255,255,255,.09)`, square corners, and only the two physical objects — the storage card and the panel screenshot — carrying a 14px radius.
+A dark ground with one lit region. `#080a0e` everywhere; the hero is a soft blue field built from four large radial stops blurred once, an inline-SVG grain plate at 9% in `overlay`, and a vignette. Nothing else glows, nothing moves, no canvas, no shader. Below the hero the page turns into a hairline spec sheet: rules at `rgba(255,255,255,.09)`, square corners, and only the two physical objects — the storage card and the panel screenshot — carrying a 14px radius.
 
 ## Colour
 
@@ -42,12 +42,14 @@ The lockup is the mark (the eight-armed asterisk, `icon.svg`, blue `#4daafc`) pl
 
 ## Motion
 
-One authored moment: the hero copy, then the pill, settling in on load (`rise`, 520ms, staggered 70/140ms). The fibre field drifts continuously at 56 threads. Everything stops under `prefers-reduced-motion: reduce` — the engine renders exactly one frame and never starts its loop; the page's own animations are `none`.
+The h1, then the action, settling in on load (`rise`, 520ms, staggered 90ms). That is the whole animation budget — the field is static. Under `prefers-reduced-motion: reduce` both animations are `none` and transitions drop to 1ms.
+
+## Weight
+
+The page is one file of ~42KB uncompressed, ~13KB gzipped: 30KB of that is the two inlined font subsets, ~5KB is CSS, ~2KB is the copy script, the rest is markup. No framework, no CDN, no analytics, no build step, no network request after the document.
 
 ## Known ceilings
 
-- `panel-dark.png` is 1000×712 rendered at ~982 CSS px: 51% density at DPR 2. A 2× asset is the fix and is not shipped.
-- The copy-button border sits at 1.22:1 against the ground. WCAG 1.4.11 is satisfied by the 6.73:1 glyph that names the control, not by the border; thickening it would break the hairline system.
 - The copy controls stay visible with JS off (`<noscript>` only neutralises the cursor) so the commands remain selectable text.
 - The hero eyebrow is a tracked-caps kicker, which craft-floor bans. The user's pinned reference includes one, so the ban does not apply to this axis.
 - Both actions are underlined text and nothing else: `Install the VSIX` in the hero (16px, underlines to blue on hover, swaps to `Copied` and stays blue for 1.6s) and `Star on GitHub` in the topbar (13.5px). Solid fills and capsule borders were tried and both read as chrome bolted onto a field; a rule under the words carries the same affordance at a twentieth of the weight.
