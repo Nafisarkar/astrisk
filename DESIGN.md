@@ -45,4 +45,4 @@ One authored moment: the hero copy, then the pill, settling in on load (`rise`, 
 - The copy-button border sits at 1.22:1 against the ground. WCAG 1.4.11 is satisfied by the 6.73:1 glyph that names the control, not by the border; thickening it would break the hairline system.
 - The copy controls stay visible with JS off (`<noscript>` only neutralises the cursor) so the commands remain selectable text.
 - The hero eyebrow is a tracked-caps kicker, which craft-floor bans. The user's pinned reference includes one, so the ban does not apply to this axis.
-- The pill is the one surface that inverts the palette: ink fill, ground text. On a field this blue, an outline reads as decoration; a solid fill reads as the action.
+- Both actions are underlined text and nothing else: `Install the VSIX` in the hero (16px, underlines to blue on hover, swaps to `Copied` and stays blue for 1.6s) and `Star on GitHub` in the topbar (13.5px). Solid fills and capsule borders were tried and both read as chrome bolted onto a field; a rule under the words carries the same affordance at a twentieth of the weight.
