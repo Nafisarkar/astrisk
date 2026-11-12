@@ -5,6 +5,13 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
+## [0.1.1] — 2026-11-12
+
+- The extension icon has transparent corners; it was a white-backed square.
+- README: the banner is a single absolute-URL image, since the marketplace
+  strips `<picture>` and cannot load repo-relative paths; a real panel
+  screenshot replaces the claims it used to describe.
+
 ## [0.1.0] — 2026-01-31
 
 First beta, published to the Marketplace on the pre-release channel. Every advertised feature is implemented and tested; the deliberate gaps

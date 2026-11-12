@@ -13,7 +13,6 @@ docs/**
 FEATURES.md
 PRODUCT.md
 DESIGN.md
-CHANGELOG.md
 bunfig.toml
 package-lock.json
 tsconfig.json
@@ -22,6 +21,8 @@ eslint.config.mjs
 **/*.ts
 **/.vscode-test.*
 .yarnrc
+
+.github/**
 
 # never ship a package inside a package
 **/*.vsix
