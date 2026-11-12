@@ -2,7 +2,7 @@
   "name": "asterisk",
   "displayName": "Asterisk",
   "description": "A local-first HTTP client for VS Code — requests, collections and environments as plain files.",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0",
   "publisher": "nafisarkar",
   "license": "MIT",
   "preview": true,

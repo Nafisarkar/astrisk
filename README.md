@@ -16,8 +16,11 @@
 <p align="center"><a href="https://nafisarkar.github.io/astrisk/">nafisarkar.github.io/astrisk</a> — what it looks like, and how to install it.</p>
 
 ```bash
-code --install-extension asterisk-0.1.0-beta.1.vsix
+code --install-extension nafisarkar.asterisk
 ```
+
+Or build it yourself: `bun install && bun x vsce package`, then
+`code --install-extension asterisk-0.1.0.vsix`.
 
 ## Features
 

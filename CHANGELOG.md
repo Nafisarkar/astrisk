@@ -5,9 +5,9 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
-## [0.1.0-beta.1] — 2026-01-31
+## [0.1.0] — 2026-01-31
 
-First beta. Every advertised feature is implemented and tested; the deliberate gaps
+First beta, published to the Marketplace on the pre-release channel. Every advertised feature is implemented and tested; the deliberate gaps
 are listed in [FEATURES.md](FEATURES.md).
 
 ### Added

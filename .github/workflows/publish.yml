@@ -1,0 +1,51 @@
+name: publish
+
+# Tag-driven, credential-free. There is no PAT secret: the job exchanges a
+# short-lived GitHub OIDC token for a Marketplace credential (trusted publishing).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run compile
+      - run: bun test
+      - run: bun test test/site.test.ts
+      - name: the vsix must build before it is published
+        run: bun x @vscode/vsce package --out /tmp/asterisk.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: /tmp/asterisk.vsix
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: marketplace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install
+      - name: publish the pre-release channel
+        run: npx --yes @vscode/vsce publish --oidc --pre-release
