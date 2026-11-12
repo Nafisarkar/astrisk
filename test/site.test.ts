@@ -9,7 +9,6 @@ const attrValues = [...html.matchAll(/\b(?:src|href)="([^"]+)"/g)].map((m) => m[
 test('every local asset referenced by the page exists on disk', () => {
   const local = attrValues.filter((v) => !/^(?:https?:|mailto:|#|data:)/i.test(v));
   expect(local).toContain('icon.svg');
-  expect(local).toContain('panel-dark.png');
   for (const url of local) {
     const file = join(docs, url.split(/[?#]/)[0]);
     expect(existsSync(file)).toBe(true);
@@ -50,9 +49,9 @@ test('in-page links and copy targets resolve', () => {
   for (const id of targets) expect(html).toContain(`id="${id}"`);
 });
 
-// GitHub Pages runs Jekyll unless docs/.nojekyll exists, and Liquid would eat every
-// {{variable}} in the copy. Deleting that file is a silent content bug, not a style one.
-test('jekyll is disabled so {{vars}} survive the deploy', () => {
+// GitHub Pages runs Jekyll unless docs/.nojekyll exists, and Liquid would eat any
+// {{...}} the copy ever grows. Deleting that file is a silent content bug, not a style one.
+test('jekyll is disabled so no liquid token can be eaten', () => {
   expect(existsSync(join(docs, '.nojekyll'))).toBe(true);
-  expect(html).toContain('{{variables}}');
+  if (/\{\{/.test(html)) expect(existsSync(join(docs, '.nojekyll'))).toBe(true);
 });

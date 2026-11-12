@@ -22,7 +22,7 @@ Blue is a *region* (the hero) and a *label voice* (11px tracked caps) — never 
 
 ## Type
 
-- **Display:** Bodoni Moda 400, self-hosted, subset to ASCII and inlined as woff2 base64 (`@font-face` at the top of the stylesheet, ~41KB base64). It is the only downloaded face and it is not downloaded — no request leaves the page.
+- **Display:** Instrument Serif 400, self-hosted, Latin subset, inlined as woff2 base64 (`@font-face` at the top of the stylesheet, ~15KB base64). Bodoni Moda was tried first and rejected: its hairlines thin to nothing on a dark field. No request leaves the page.
 - **Body / UI:** system sans stack, first name `Inter` (never fetched; resolves to the platform UI face, which is what the extension itself renders in).
 - **Data:** system mono stack for every label, command, path, tree and the eyebrow. Uppercase mono labels are 11px at 0.14em tracking; the hero's eyebrow is 11px at 0.34em.
 - Display tracking is `-0.015em` (serifs need far less negative tracking than the sans it replaced). Body measure 46–54ch, hero lede 54ch.
@@ -33,7 +33,7 @@ Blue is a *region* (the hero) and a *label voice* (11px tracked caps) — never 
 
 ## Structure
 
-`hero` (100svh, centred) → `repo` (storage tree + gated install sequence, two columns) → `capabilities` (six cells, 3/2/1) → `beta` rule → `proof` (panel render + closing install row) → `footer`.
+One screen. `hero` at `100svh`, centred, nothing else below it — the page does not scroll. The battery of spec sections (storage tree, install sequence, capability lattice, beta rule, panel render, footer) was cut on request; the install action they carried now lives in the hero as one ink-filled pill that copies the command.
 
 ## Motion
 
@@ -45,3 +45,4 @@ One authored moment: the hero copy, then the pill, settling in on load (`rise`, 
 - The copy-button border sits at 1.22:1 against the ground. WCAG 1.4.11 is satisfied by the 6.73:1 glyph that names the control, not by the border; thickening it would break the hairline system.
 - The copy controls stay visible with JS off (`<noscript>` only neutralises the cursor) so the commands remain selectable text.
 - The hero eyebrow is a tracked-caps kicker, which craft-floor bans. The user's pinned reference includes one, so the ban does not apply to this axis.
+- The pill is the one surface that inverts the palette: ink fill, ground text. On a field this blue, an outline reads as decoration; a solid fill reads as the action.
