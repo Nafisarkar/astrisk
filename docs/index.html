@@ -79,6 +79,31 @@ p{margin:0}
 .nav a[aria-current]{color:var(--blue)}
 .nav .gh svg{display:none}
 
+/* the star button: dark capsule, a shine that crosses it on hover, a star that warms */
+.gh{
+  position:relative;overflow:hidden;isolation:isolate;
+  display:inline-flex;align-items:center;gap:9px;height:40px;padding:0 15px;
+  border:1px solid rgba(255,255,255,.11);border-radius:6px;background:#0e1219;
+  color:var(--ink);text-decoration:none;font:500 13px/1 var(--sans);
+  box-shadow:0 1px 2px rgba(0,0,0,.7),0 10px 26px -18px rgba(0,0,0,.9);
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.gh:hover{background:#141a23;border-color:rgba(255,255,255,.2)}
+.gh:active{scale:.985}
+.gh:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.gh-shine{
+  position:absolute;z-index:-1;top:-52px;right:0;width:34px;height:140px;
+  background:#fff;opacity:.09;transform:translateX(52px) rotate(12deg);
+  transition:transform 900ms var(--ease);pointer-events:none;
+}
+.gh:hover .gh-shine{transform:translateX(-230px) rotate(12deg)}
+.gh-mark{width:15px;height:15px;flex:none;fill:currentColor}
+.gh-label{white-space:nowrap}
+.gh-count{display:flex;align-items:center;gap:5px;margin-left:5px;font:500 13px/1 var(--sans);font-variant-numeric:tabular-nums}
+.gh-star{width:14px;height:14px;flex:none;fill:rgba(232,237,245,.4);transition:fill var(--dur) var(--ease)}
+.gh:hover .gh-star{fill:#ffd166}
+@media (max-width:360px){.gh{padding:0 13px}.gh-label,.gh-count{display:none}}
+
 /* the rail: the mark and the wordmark, turned on their side at the left edge */
 .rail{
   position:fixed;left:clamp(12px,2.2vw,26px);top:50%;translate:0 -50%;z-index:4;
@@ -118,7 +143,7 @@ p{margin:0}
   color:rgba(232,237,245,.55);
 }
 h1{
-  margin:clamp(18px,3.2vh,32px) 0 0;
+  margin:0;
   font-family:var(--serif);font-weight:400;font-size:clamp(2.9rem,6.4vw,5.9rem);
   line-height:1.0;letter-spacing:.002em;text-wrap:balance;
 }
@@ -127,16 +152,16 @@ h1{
   font-size:clamp(16px,1.22vw,18.5px);line-height:1.66;color:rgba(232,237,245,.62);
   text-wrap:pretty;
 }
-.cta{margin-top:clamp(26px,4.2vh,46px);display:flex;flex-direction:column;align-items:center;gap:15px}
+.cta{margin-top:clamp(34px,5.4vh,54px);display:flex;flex-direction:column;align-items:center;gap:16px}
 .pill{
   display:inline-flex;align-items:center;gap:10px;
-  min-height:50px;padding:0 26px 0 30px;border:0;border-radius:999px;
+  width:44px;height:44px;min-height:44px;padding:0;border:0;border-radius:999px;
   background:var(--ink);color:#080a0e;
-  font:500 15px/1 var(--sans);letter-spacing:-.005em;
+  font:500 13.5px/1 var(--sans);letter-spacing:0;
   cursor:pointer;box-shadow:0 12px 30px -14px rgba(0,0,0,.85);
   transition:background-color var(--dur) var(--ease),transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
 }
-.pill svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
+.pill svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
 .pill:hover{background:#fff;transform:translateY(-1px);box-shadow:0 16px 34px -14px rgba(0,0,0,.9)}
 .pill:hover svg{transform:translateX(3px)}
 .pill:active{transform:translateY(0);box-shadow:0 8px 20px -12px rgba(0,0,0,.8)}
@@ -216,9 +241,14 @@ h1{animation:rise 520ms var(--ease) backwards}
 
 <header class="topbar">
   <div class="wrap">
-    <nav class="nav" aria-label="Primary">
-    <a href="https://github.com/Nafisarkar/astrisk" rel="noopener">GitHub</a>
-  </nav>
+    <a class="gh" href="https://github.com/Nafisarkar/astrisk" rel="noopener" aria-label="Star asterisk on GitHub">
+    <span class="gh-shine" aria-hidden="true"></span>
+    <svg class="gh-mark" viewBox="0 0 438.549 438.549" aria-hidden="true" focusable="false"><path d="M409.132 114.573c-19.608-33.596-46.205-60.194-79.798-79.8-33.598-19.607-70.277-29.408-110.063-29.408-39.781 0-76.472 9.804-110.063 29.408-33.596 19.605-60.192 46.204-79.8 79.8C9.803 148.168 0 184.854 0 224.63c0 47.78 13.94 90.745 41.827 128.906 27.884 38.164 63.906 64.572 108.063 79.227 5.14.954 8.945.283 11.419-1.996 2.475-2.282 3.711-5.14 3.711-8.562 0-.571-.049-5.708-.144-15.417a2549.81 2549.81 0 01-.144-25.406l-6.567 1.136c-4.187.767-9.469 1.092-15.846 1-6.374-.089-12.991-.757-19.842-1.999-6.854-1.231-13.229-4.086-19.13-8.559-5.898-4.473-10.085-10.328-12.56-17.556l-2.855-6.57c-1.903-4.374-4.899-9.233-8.992-14.559-4.093-5.331-8.232-8.945-12.419-10.848l-1.999-1.431c-1.332-.951-2.568-2.098-3.711-3.429-1.142-1.331-1.997-2.663-2.568-3.997-.572-1.335-.098-2.43 1.427-3.289 1.525-.859 4.281-1.276 8.28-1.276l5.708.853c3.807.763 8.516 3.042 14.133 6.851 5.614 3.806 10.229 8.754 13.846 14.842 4.38 7.806 9.657 13.754 15.846 17.847 6.184 4.093 12.419 6.136 18.699 6.136 6.28 0 11.704-.476 16.274-1.423 4.565-.952 8.848-2.383 12.847-4.285 1.713-12.758 6.377-22.559 13.988-29.41-10.848-1.14-20.601-2.857-29.264-5.14-8.658-2.286-17.605-5.996-26.835-11.14-9.235-5.137-16.896-11.516-22.985-19.126-6.09-7.614-11.088-17.61-14.987-29.979-3.901-12.374-5.852-26.648-5.852-42.826 0-23.035 7.52-42.637 22.557-58.817-7.044-17.318-6.379-36.732 1.997-58.24 5.52-1.715 13.706-.428 24.554 3.853 10.85 4.283 18.794 7.952 23.84 10.994 5.046 3.041 9.089 5.618 12.135 7.708 17.705-4.947 35.976-7.421 54.818-7.421s37.117 2.474 54.823 7.421l10.849-6.849c7.419-4.57 16.18-8.758 26.262-12.565 10.088-3.805 17.802-4.853 23.134-3.138 8.562 21.509 9.325 40.922 2.279 58.24 15.036 16.18 22.559 35.787 22.559 58.817 0 16.178-1.958 30.497-5.853 42.966-3.9 12.471-8.941 22.457-15.125 29.979-6.191 7.521-13.901 13.85-23.131 18.986-9.232 5.14-18.182 8.85-26.84 11.136-8.662 2.286-18.415 4.004-29.263 5.146 9.894 8.562 14.842 22.077 14.842 40.539v60.237c0 3.422 1.19 6.279 3.572 8.562 2.379 2.279 6.136 2.95 11.276 1.995 44.163-14.653 80.185-41.062 108.068-79.226 27.88-38.161 41.825-81.126 41.825-128.906-.01-39.771-9.818-76.454-29.414-110.049z"/></svg>
+    <span class="gh-label">Star on GitHub</span>
+    <span class="gh-count">
+      <svg class="gh-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path clip-rule="evenodd" fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"/></svg>
+    </span>
+  </a>
   </div>
 </header>
 
@@ -231,12 +261,9 @@ h1{animation:rise 520ms var(--ease) backwards}
     </div>
 
     <div class="hero-copy">
-      <p class="eyebrow">Local-first · VS&nbsp;Code extension</p>
       <h1 id="hero-title">API testing that lives<br>in your repo.</h1>
-      <p class="lede">Requests, collections and environments are files in the repo you already commit. No account, no cloud, no telemetry.</p>
       <div class="cta">
-        <button class="pill" type="button" data-copy="cmd-hero" data-done="Copied the install command." aria-label="Copy the install command">
-          <span class="copy-label">Install the VSIX</span>
+        <button class="pill" type="button" data-copy="cmd-hero" data-done="Copied the install command." aria-label="Copy the install command" title="Copy the install command">
           <svg class="i-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg>
           <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
         </button>

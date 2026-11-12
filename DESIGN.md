@@ -33,7 +33,7 @@ Blue is a *region* (the hero) and a *label voice* (11px tracked caps) — never 
 
 ## Structure
 
-One screen. `hero` at `100svh`, centred, nothing else below it — the page does not scroll. The battery of spec sections (storage tree, install sequence, capability lattice, beta rule, panel render, footer) was cut on request; the install action they carried now lives in the hero as one ink-filled pill that copies the command.
+One screen: a topbar holding a single Star-on-GitHub capsule, then `hero` at `100svh`, centred, nothing else below it — the page does not scroll. The battery of spec sections (storage tree, install sequence, capability lattice, beta rule, panel render, footer) was cut on request; the install action they carried now lives in the hero as one ink-filled pill that copies the command.
 
 ## Motion
 
