@@ -30,11 +30,15 @@ Blue is a *region* (the hero) and a *label voice* (11px tracked caps) — never 
 
 ## Type scale
 
-`h1 clamp(2.9rem, 6.4vw, 5.9rem)` · section h2s are `.sr-only`; visible section heads are the mono `.tag` · lede `clamp(16px,1.22vw,18.5px)` · lattice values 13px mono · commands 13px mono.
+`h1 clamp(2.9rem, 6.4vw, 5.9rem)` · brand 13px mono · links 12.5px · command 11.5px · section h2s are `.sr-only`; visible section heads are the mono `.tag` · lede `clamp(16px,1.22vw,18.5px)` · lattice values 13px mono · commands 13px mono.
 
 ## Structure
 
-One screen: a topbar holding a single Star-on-GitHub capsule, then `hero` at `100svh`, centred, nothing else below it — the page does not scroll. The battery of spec sections (storage tree, install sequence, capability lattice, beta rule, panel render, footer) was cut on request; the install action they carried now lives in the hero as one ink-filled pill that copies the command.
+One screen: a topbar holding the brand lockup on the left and the Star-on-GitHub link on the right, then `hero` at `100svh`, centred, nothing else below it — the page does not scroll. The battery of spec sections (storage tree, install sequence, capability lattice, beta rule, panel render, footer) was cut on request; the install action they carried now lives in the hero as one ink-filled pill that copies the command.
+
+## Brand
+
+The lockup is the mark (the eight-armed asterisk, `icon.svg`, blue `#4daafc`) plus the word `asterisk` set lowercase in JetBrains Mono at 13px, top-left. It sits in the topbar rather than a fixed rail so it survives at every width. The same glyph is the favicon, so the tab and the page agree.
 
 ## Motion
 

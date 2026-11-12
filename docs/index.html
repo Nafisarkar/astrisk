@@ -69,7 +69,7 @@ p{margin:0}
 
 /* ---------- chrome ---------- */
 .topbar{position:absolute;top:0;left:0;right:0;z-index:4;padding-top:clamp(16px,2.6vh,26px)}
-.topbar .wrap{display:flex;justify-content:flex-end}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between}
 .nav{display:flex;align-items:center;gap:clamp(18px,2.4vw,38px)}
 .nav a{
   font:400 13px/1 var(--sans);color:rgba(232,237,245,.70);text-decoration:none;
@@ -86,21 +86,22 @@ p{margin:0}
   color:rgba(232,237,245,.72);text-decoration:underline;
   text-decoration-thickness:1px;text-underline-offset:6px;
   text-decoration-color:rgba(232,237,245,.3);text-decoration-skip-ink:none;
-  font:400 13.5px/1 var(--sans);letter-spacing:0;
+  font:400 12.5px/1 var(--mono);letter-spacing:-.01em;
   transition:color var(--dur) var(--ease),text-decoration-color var(--dur) var(--ease);
 }
 .gh:hover{color:var(--ink);text-decoration-color:var(--blue)}
 
-/* the rail: the mark and the wordmark, turned on their side at the left edge */
-.rail{
-  position:fixed;left:clamp(12px,2.2vw,26px);top:50%;translate:0 -50%;z-index:4;
-  display:flex;flex-direction:column;align-items:center;gap:13px;
-  color:rgba(232,237,245,.55);text-decoration:none;transition:color var(--dur) var(--ease);
+/* the brand lockup: the mark, then the word in the mono voice */
+.brand{
+  display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:0 2px;
+  color:var(--ink);text-decoration:none;
+  font:400 13px/1 var(--mono);letter-spacing:-.01em;
+  transition:color var(--dur) var(--ease);
 }
-.rail .mark{display:block;width:15px;height:15px;color:var(--blue);background:none}
-.rail .mark svg{display:block;width:100%;height:100%;fill:currentColor}
-.rail span{writing-mode:vertical-rl;rotate:180deg;font:400 12px/1 var(--sans);letter-spacing:.03em}
-.rail:hover{color:var(--ink)}
+.brand .mark{display:block;width:14px;height:14px;color:var(--blue);transition:color var(--dur) var(--ease)}
+.brand .mark svg{display:block;width:100%;height:100%;fill:currentColor}
+.brand:hover{color:#fff}
+.brand:hover .mark{color:#8cc8ff}
 
 /* ---------- hero: one centred column on a lit field ---------- */
 .hero{position:relative;display:grid;place-items:center;min-height:100svh;padding:clamp(72px,12vh,120px) 0 clamp(56px,9vh,96px);overflow:hidden;text-align:center}
@@ -143,7 +144,7 @@ h1{
 .pill{
   display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 2px;
   border:0;background:none;color:var(--ink);
-  font:400 16px/1 var(--sans);letter-spacing:0;
+  font:400 15px/1 var(--sans);letter-spacing:0;
   text-decoration:underline;text-decoration-thickness:1px;
   text-underline-offset:7px;text-decoration-color:rgba(232,237,245,.38);text-decoration-skip-ink:none;
   cursor:pointer;
@@ -155,7 +156,7 @@ h1{
 .pill[data-state="copied"]{color:var(--blue);text-decoration-color:var(--blue)}
 .pill[data-state="copied"] .rest{display:none}
 .pill[data-state="copied"] .done{display:inline}
-.cmd{font:400 12.5px/1.6 var(--mono);letter-spacing:-.01em;color:rgba(232,237,245,.62);word-break:break-word}
+.cmd{font:400 11.5px/1.7 var(--mono);letter-spacing:-.01em;color:rgba(232,237,245,.62);word-break:break-word}
 .hero .sr-only{position:absolute}
 
 
@@ -171,7 +172,7 @@ h1{animation:rise 520ms var(--ease) backwards}
 }
 
 /* ---------- responsive ---------- */
-@media (max-width:1180px){.rail{display:none}}
+@media (max-width:560px){.cmd{max-width:26ch}}
 @media (max-width:999px){
   .lattice{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -220,13 +221,13 @@ h1{animation:rise 520ms var(--ease) backwards}
 </head>
 <body id="top">
 
-<a class="rail" href="#top" aria-label="asterisk, back to top">
-  <span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" focusable="false"><path fill="currentColor" d="M24.36 91.24 C19.97 88.63 16.12 86.2 15.81 85.85 C14.84 84.76 15.05 84.0 17.67 79.26 C19.01 76.85 20.59 74.12 21.19 73.2 C23.11 70.25 26.15 67.91 29.8 66.55 L31.62 65.88 L45.25 65.75 C60.06 65.61 59.6 65.66 60.51 64.17 C61.42 62.69 61.03 61.08 59.52 60.07 L58.68 59.5 L30.07 59.5 L1.46 59.5 L0.73 58.77 L0.0 58.04 L0.0 48.0 L0.0 37.96 L0.73 37.23 L1.46 36.5 L14.98 36.5 C22.42 36.5 28.5 36.43 28.5 36.33 C28.5 36.24 25.52 30.81 21.88 24.27 C17.09 15.68 15.25 12.15 15.25 11.57 C15.25 11.1 15.48 10.52 15.81 10.15 C16.59 9.27 32.22 0.0 32.92 0.0 C33.24 0.0 33.82 0.31 34.23 0.69 C34.83 1.25 38.4 7.5 46.93 22.94 C47.41 23.8 47.89 24.5 48.0 24.5 C48.11 24.5 48.59 23.8 49.07 22.94 C57.6 7.5 61.17 1.25 61.77 0.69 C62.18 0.31 62.76 -0.0 63.08 -0.0 C63.78 -0.0 79.41 9.27 80.19 10.15 C81.16 11.24 80.95 12.0 78.33 16.74 C76.99 19.15 75.41 21.88 74.8 22.81 C72.87 25.79 69.78 28.12 66.02 29.45 L64.12 30.12 L50.44 30.25 L36.76 30.38 L35.94 31.19 C35.22 31.91 35.12 32.17 35.12 33.35 C35.12 34.34 35.26 34.85 35.62 35.26 C36.77 36.54 35.68 36.5 66.14 36.5 L94.54 36.5 L95.27 37.23 L96.0 37.96 L96.0 48.0 L96.0 58.04 L95.27 58.77 L94.54 59.5 L81.02 59.5 C73.58 59.5 67.5 59.57 67.5 59.67 C67.5 59.76 70.48 65.19 74.12 71.73 C78.91 80.32 80.75 83.85 80.75 84.43 C80.75 84.9 80.52 85.48 80.19 85.85 C79.41 86.73 63.78 96.0 63.08 96.0 C62.76 96.0 62.18 95.69 61.77 95.31 C61.17 94.75 57.6 88.5 49.07 73.06 C48.59 72.2 48.11 71.5 48.0 71.5 C47.89 71.5 47.41 72.2 46.93 73.06 C38.4 88.5 34.83 94.75 34.23 95.31 C33.82 95.69 33.24 96.0 32.92 96.0 C32.61 96.0 28.76 93.86 24.36 91.24 Z"/></svg></span>
-  <span>asterisk</span>
-</a>
 
 <header class="topbar">
   <div class="wrap">
+    <a class="brand" href="#top" aria-label="asterisk — back to top">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" focusable="false"><path fill="currentColor" d="M24.36 91.24 C19.97 88.63 16.12 86.2 15.81 85.85 C14.84 84.76 15.05 84.0 17.67 79.26 C19.01 76.85 20.59 74.12 21.19 73.2 C23.11 70.25 26.15 67.91 29.8 66.55 L31.62 65.88 L45.25 65.75 C60.06 65.61 59.6 65.66 60.51 64.17 C61.42 62.69 61.03 61.08 59.52 60.07 L58.68 59.5 L30.07 59.5 L1.46 59.5 L0.73 58.77 L0.0 58.04 L0.0 48.0 L0.0 37.96 L0.73 37.23 L1.46 36.5 L14.98 36.5 C22.42 36.5 28.5 36.43 28.5 36.33 C28.5 36.24 25.52 30.81 21.88 24.27 C17.09 15.68 15.25 12.15 15.25 11.57 C15.25 11.1 15.48 10.52 15.81 10.15 C16.59 9.27 32.22 0.0 32.92 0.0 C33.24 0.0 33.82 0.31 34.23 0.69 C34.83 1.25 38.4 7.5 46.93 22.94 C47.41 23.8 47.89 24.5 48.0 24.5 C48.11 24.5 48.59 23.8 49.07 22.94 C57.6 7.5 61.17 1.25 61.77 0.69 C62.18 0.31 62.76 -0.0 63.08 -0.0 C63.78 -0.0 79.41 9.27 80.19 10.15 C81.16 11.24 80.95 12.0 78.33 16.74 C76.99 19.15 75.41 21.88 74.8 22.81 C72.87 25.79 69.78 28.12 66.02 29.45 L64.12 30.12 L50.44 30.25 L36.76 30.38 L35.94 31.19 C35.22 31.91 35.12 32.17 35.12 33.35 C35.12 34.34 35.26 34.85 35.62 35.26 C36.77 36.54 35.68 36.5 66.14 36.5 L94.54 36.5 L95.27 37.23 L96.0 37.96 L96.0 48.0 L96.0 58.04 L95.27 58.77 L94.54 59.5 L81.02 59.5 C73.58 59.5 67.5 59.57 67.5 59.67 C67.5 59.76 70.48 65.19 74.12 71.73 C78.91 80.32 80.75 83.85 80.75 84.43 C80.75 84.9 80.52 85.48 80.19 85.85 C79.41 86.73 63.78 96.0 63.08 96.0 C62.76 96.0 62.18 95.69 61.77 95.31 C61.17 94.75 57.6 88.5 49.07 73.06 C48.59 72.2 48.11 71.5 48.0 71.5 C47.89 71.5 47.41 72.2 46.93 73.06 C38.4 88.5 34.83 94.75 34.23 95.31 C33.82 95.69 33.24 96.0 32.92 96.0 C32.61 96.0 28.76 93.86 24.36 91.24 Z"/></svg></span>
+      <span class="word">asterisk</span>
+    </a>
     <a class="gh" href="https://github.com/Nafisarkar/astrisk" rel="noopener">Star on GitHub</a>
   </div>
 </header>
