@@ -22,14 +22,15 @@ Blue is a *region* (the hero) and a *label voice* (11px tracked caps) — never 
 
 ## Type
 
-- **Display:** Instrument Serif 400, self-hosted, Latin subset, inlined as woff2 base64 (`@font-face` at the top of the stylesheet, ~15KB base64). Bodoni Moda was tried first and rejected: its hairlines thin to nothing on a dark field. No request leaves the page.
+- **Display:** Redaction 50 400, self-hosted, Latin subset, inlined as woff2 base64 (~9KB base64). This is the *dithered* cut of the Redaction family — the stair-stepped edges are the typeface, not a rasterisation failure. It replaced Instrument Serif and, before that, Bodoni Moda (rejected: hairlines pair to nothing on a dark field).
+- **Mono:** JetBrains Mono 400, ASCII subset, inlined (~21KB base64). Carries the install command.
 - **Body / UI:** system sans stack, first name `Inter` (never fetched; resolves to the platform UI face, which is what the extension itself renders in).
-- **Data:** system mono stack for every label, command, path, tree and the eyebrow. Uppercase mono labels are 11px at 0.14em tracking; the hero's eyebrow is 11px at 0.34em.
+- Both faces are inlined data URIs: the page still makes zero external requests.
 - Display tracking is `-0.015em` (serifs need far less negative tracking than the sans it replaced). Body measure 46–54ch, hero lede 54ch.
 
 ## Type scale
 
-`h1 clamp(2.6rem, 5.5vw, 5rem)` · section h2s are `.sr-only`; visible section heads are the mono `.tag` · lede `clamp(16px,1.22vw,18.5px)` · lattice values 13px mono · commands 13px mono.
+`h1 clamp(2.9rem, 6.4vw, 5.9rem)` · section h2s are `.sr-only`; visible section heads are the mono `.tag` · lede `clamp(16px,1.22vw,18.5px)` · lattice values 13px mono · commands 13px mono.
 
 ## Structure
 
