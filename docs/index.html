@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asterisk — a local-first HTTP client for VS Code</title>
+<meta name="description" content="Asterisk is a local-first HTTP client for VS Code. Every request, collection and environment is a plain file you can diff, review and commit. No account, no cloud, no telemetry.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#080b11">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Asterisk">
+<meta property="og:title" content="Asterisk — a local-first HTTP client for VS Code">
+<meta property="og:description" content="Requests, collections and environments as plain files in your repo. Zero runtime dependencies, no account, no cloud, no telemetry.">
+<meta property="og:url" content="https://nafisarkar.github.io/astrisk/">
+<meta property="og:image" content="https://nafisarkar.github.io/astrisk/banner-dark.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="300">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Asterisk — a local-first HTTP client for VS Code">
+<meta name="twitter:description" content="Requests, collections and environments as plain files in your repo. Zero runtime dependencies, no account, no cloud, no telemetry.">
+<meta name="twitter:image" content="https://nafisarkar.github.io/astrisk/banner-dark.png">
+<style>
+:root{
+  --bg:#080b11;
+  --surface:#0e131c;
+  --hair:rgba(255,255,255,.08);
+  --ink:#eef2f7;
+  --mute:#93a1b5;
+  --faint:#6b7a8f;
+  --dim:#7d8da2;
+  --accent:#4daafc;
+  --accent-ink:#8ecbff;
+  --green:#3fb950;
+  --chip:#7ee787;
+  --sans:Inter, ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono:ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  --wrap:1120px;
+  --dur:120ms;
+  --ease:cubic-bezier(.2,0,0,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark;-webkit-text-size-adjust:100%;scroll-padding-top:16px;scrollbar-color:rgba(255,255,255,.16) transparent}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:400 16px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  font-synthesis-weight:none;
+}
+/* the only decoration: a 32px grid and one accent glow, both fading out */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(115% 85% at 6% 0%, #000 0%, rgba(0,0,0,.35) 45%, transparent 72%);
+  mask-image:radial-gradient(115% 85% at 6% 0%, #000 0%, rgba(0,0,0,.35) 45%, transparent 72%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(620px 460px at 4% -6%, rgba(77,170,252,.10), transparent 70%);
+}
+::selection{background:rgba(77,170,252,.28);color:var(--ink)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.26)}
+a{color:inherit}
+:where(a,button):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.wrap{width:100%;max-width:var(--wrap);margin-inline:auto;padding-inline:24px}
+
+/* ---------- top bar ---------- */
+.topbar{border-bottom:1px solid var(--hair)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:60px}
+.brand{display:inline-flex;align-items:center;gap:9px;color:var(--ink);font-weight:600;font-size:16px;letter-spacing:-.015em;text-decoration:none}
+.brand .mark{width:17px;height:17px;color:var(--accent);display:block;flex:none}
+.nav{display:flex;align-items:center;gap:2px}
+.nav a{
+  display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 10px;border-radius:7px;
+  color:var(--mute);font-size:14px;text-decoration:underline;text-decoration-color:rgba(255,255,255,.14);
+  text-underline-offset:4px;text-decoration-thickness:1px;
+  transition:color var(--dur) var(--ease), background-color var(--dur) var(--ease), text-decoration-color var(--dur) var(--ease);
+}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.045);text-decoration-color:var(--faint)}
+.nav a:active{background:rgba(255,255,255,.08)}
+.nav a.gh svg{width:16px;height:16px;display:block;flex:none;fill:currentColor}
+
+/* ---------- shared type ---------- */
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:clamp(2.5rem, 5.2vw + .9rem, 4rem);line-height:1.03;letter-spacing:-.03em;font-weight:640;max-width:17ch}
+h2{font-size:clamp(1.7rem, 1.1vw + 1.35rem, 2.25rem);line-height:1.14;letter-spacing:-.025em;font-weight:620;max-width:30ch}
+h3{font-size:15.5px;line-height:1.35;letter-spacing:-.012em;font-weight:600}
+p{margin:0;text-wrap:pretty}
+h2 + .body{margin-top:14px}
+.body{color:var(--mute);max-width:68ch}
+.lede{font-size:clamp(1rem, .35vw + .92rem, 1.125rem);line-height:1.62;color:var(--mute);max-width:64ch;margin-top:24px}
+
+/* ---------- hero ---------- */
+.hero{padding-block:64px 0}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:32px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;padding:0 20px;border-radius:10px;border:1px solid transparent;
+  font-size:15px;font-weight:560;letter-spacing:-.008em;text-decoration:none;
+  transition:background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), scale var(--dur) var(--ease);
+}
+.btn:active{scale:.96}
+.btn-primary{background:var(--accent);color:#071019;box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 28px -14px rgba(77,170,252,.62)}
+.btn-primary:hover{background:var(--accent-ink)}
+.btn-ghost{border-color:var(--hair);color:var(--ink);background:rgba(255,255,255,.015)}
+.btn-ghost:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.16)}
+.meta{display:flex;flex-wrap:wrap;align-items:center;margin:28px 0 0;padding:0;list-style:none;font-size:13.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.meta li{padding-inline:12px;border-left:1px solid var(--hair);line-height:1.2}
+.meta li:first-child{padding-left:0;border-left:0}
+
+.shot{max-width:1000px;margin:64px 0 0}
+.shot-frame{padding:8px;background:var(--surface);border-radius:16px;
+  outline:1px solid rgba(255,255,255,.10);outline-offset:0;
+  box-shadow:0 34px 64px -30px rgba(0,0,0,.95), 0 2px 8px -4px rgba(0,0,0,.6)}
+.shot img{display:block;width:100%;height:auto;border-radius:8px}
+.shot figcaption{margin-top:14px;font-size:13px;color:var(--dim)}
+
+/* ---------- sections ---------- */
+.section{padding-block:96px 0}
+.section > .wrap{border-top:1px solid var(--hair);padding-top:64px}
+@media (min-width:901px){.section{padding-top:112px}}
+
+/* features ledger */
+.ledger{list-style:none;margin:40px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:64px}
+.ledger li{padding-block:20px;border-top:1px solid var(--hair)}
+.ledger h3{color:var(--ink)}
+.ledger p{margin-top:5px;color:var(--mute);font-size:14.5px;line-height:1.5}
+
+/* two-column split */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start;margin-top:40px}
+.tick{list-style:none;margin:24px 0 0;padding:0;display:grid;gap:12px;max-width:60ch}
+.tick li{position:relative;padding-left:20px;color:var(--mute);font-size:15px;line-height:1.55}
+.tick li::before{content:"";position:absolute;left:0;top:.72em;width:10px;height:1px;background:var(--faint)}
+
+.code{
+  margin:0;padding:16px 20px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;
+  overflow:auto;font:12.75px/1.75 var(--mono);color:var(--ink);
+}
+.code code{font:inherit;white-space:pre;display:block;color:var(--ink);font-variant-ligatures:none}
+.code .c{color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:20px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;min-height:26px;padding:0 11px;border-radius:999px;
+  font-size:12.5px;font-weight:560;color:var(--chip);
+  background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.34);
+}
+.chip::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
+.note{color:var(--mute);font-size:14px}
+code.inline{
+  font:12.75px/1 var(--mono);color:var(--accent-ink);background:rgba(255,255,255,.045);
+  border:1px solid var(--hair);border-radius:5px;padding:2px 5px;
+}
+
+/* install */
+.cmd{display:flex;align-items:stretch;gap:8px;margin-top:20px}
+.cmd pre{
+  flex:1;min-width:0;margin:0;padding:0 16px;min-height:48px;display:flex;align-items:center;
+  background:var(--surface);border:1px solid var(--hair);border-radius:10px;overflow:auto;
+  font:13px/1.5 var(--mono);color:var(--ink);
+}
+.cmd pre code{white-space:pre;display:block}
+.cmd.quiet pre{min-height:44px;font-size:12.5px;color:var(--mute);background:transparent}
+.cmd + .body{margin-top:24px}
+.cmd.quiet pre code{color:var(--mute)}
+.copy{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;
+  min-width:100px;min-height:44px;padding:0 14px;border-radius:10px;
+  border:1px solid var(--hair);background:rgba(255,255,255,.02);color:var(--mute);
+  font:560 14px/1 var(--sans);cursor:pointer;
+  transition:background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), scale var(--dur) var(--ease);
+}
+.copy:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:var(--ink)}
+.copy:active{scale:.96}
+.copy .ico{display:grid;place-items:center;width:15px;height:15px}
+.copy .ico svg{grid-area:1/1;width:15px;height:15px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  transition:opacity var(--dur) var(--ease), scale var(--dur) var(--ease), filter var(--dur) var(--ease)}
+.copy .ico-check{opacity:0;scale:.25;filter:blur(4px);color:var(--green)}
+.copy[data-state="copied"]{color:var(--ink);border-color:rgba(63,185,80,.4)}
+.copy[data-state="copied"] .ico-copy{opacity:0;scale:.25;filter:blur(4px)}
+.copy[data-state="copied"] .ico-check{opacity:1;scale:1;filter:blur(0)}
+
+.links{list-style:none;display:flex;flex-wrap:wrap;gap:8px 24px;margin:40px 0 0;padding:0;font-size:14.5px}
+.links a{color:var(--accent-ink);text-decoration:underline;text-decoration-color:rgba(142,203,255,.4);text-underline-offset:4px;text-decoration-thickness:1px;
+  transition:text-decoration-color var(--dur) var(--ease), color var(--dur) var(--ease)}
+.links a:hover{text-decoration-color:var(--accent-ink);color:#a9d8ff}
+
+/* ---------- footer ---------- */
+.site-foot{margin-top:96px;border-top:1px solid var(--hair)}
+.foot-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 32px;padding-block:32px}
+.foot-brand{display:inline-flex;align-items:center;gap:9px;font-weight:600;color:var(--ink);font-size:15px;letter-spacing:-.015em}
+.foot-brand .mark{width:15px;height:15px;color:var(--accent);display:block}
+.foot-meta{color:var(--dim);font-size:13.5px;font-variant-numeric:tabular-nums}
+.foot-links{list-style:none;display:flex;flex-wrap:wrap;gap:4px 20px;margin:0;padding:0;font-size:14px}
+.foot-links a{color:var(--mute);text-decoration:underline;text-decoration-color:rgba(255,255,255,.14);text-underline-offset:4px;
+  transition:color var(--dur) var(--ease), text-decoration-color var(--dur) var(--ease)}
+.foot-links a:hover{color:var(--ink);text-decoration-color:var(--faint)}
+
+/* ---------- one authored moment, on load only ---------- */
+@keyframes settle{from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
+.hero h1{animation:settle 560ms var(--ease) backwards}
+.hero .lede{animation:settle 560ms var(--ease) 70ms backwards}
+.hero .actions{animation:settle 560ms var(--ease) 140ms backwards}
+.hero .meta{animation:settle 560ms var(--ease) 200ms backwards}
+.shot{animation:settle 680ms var(--ease) 260ms backwards}
+@media (prefers-reduced-motion:reduce){
+  .hero h1,.hero .lede,.hero .actions,.hero .meta,.shot{animation:none}
+  *,*::before,*::after{transition-duration:1ms !important;animation-duration:1ms !important}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .split{grid-template-columns:minmax(0,1fr);gap:32px}
+  .section > .wrap{padding-top:48px}
+  .section{padding-top:72px}
+  .shot{margin-top:48px}
+  .shot-frame{padding:6px;border-radius:13px}
+  .shot img{border-radius:7px}
+}
+@media (max-width:760px){
+  .ledger{grid-template-columns:minmax(0,1fr);margin-top:32px}
+  .hero{padding-top:48px}
+  .nav a.gh span{display:none}
+  .nav a.gh{padding-inline:9px}
+  .cmd{flex-wrap:wrap}
+  .cmd pre{flex-basis:100%}
+  .copy{min-height:40px}
+  .links{margin-top:32px;gap:8px 20px}
+  .site-foot{margin-top:72px}
+}
+@media (max-width:520px){
+  /* the tree is 52 chars wide; drop the comments rather than force a scroll on a phone */
+  .code .c{display:none}
+  .code{padding:14px 16px;font-size:12px}
+  /* commands wrap at their spaces instead of scrolling sideways */
+  .cmd pre{font-size:12px}
+  .cmd pre code{white-space:pre-wrap;padding-left:1.1em;text-indent:-1.1em}
+}
+@media (max-width:460px){
+  .topbar-inner{gap:12px}
+  .brand{font-size:15px}
+  .nav a{font-size:13px;padding-inline:7px;min-height:36px}
+}
+@media (max-width:400px){
+  .wrap{padding-inline:20px}
+  .ledger li{padding-block:16px}
+  .meta{font-size:13px;gap:2px 10px}
+  .meta li{padding-inline:0;border-left:0}
+  .meta li:not(:last-child)::after{content:"·";margin-left:10px;color:var(--faint);opacity:.75}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar" id="top">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#top">
+      <svg class="mark" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><path fill="currentColor" d="M24.36 91.24 C19.97 88.63 16.12 86.2 15.81 85.85 C14.84 84.76 15.05 84.0 17.67 79.26 C19.01 76.85 20.59 74.12 21.19 73.2 C23.11 70.25 26.15 67.91 29.8 66.55 L31.62 65.88 L45.25 65.75 C60.06 65.61 59.6 65.66 60.51 64.17 C61.42 62.69 61.03 61.08 59.52 60.07 L58.68 59.5 L30.07 59.5 L1.46 59.5 L0.73 58.77 L0.0 58.04 L0.0 48.0 L0.0 37.96 L0.73 37.23 L1.46 36.5 L14.98 36.5 C22.42 36.5 28.5 36.43 28.5 36.33 C28.5 36.24 25.52 30.81 21.88 24.27 C17.09 15.68 15.25 12.15 15.25 11.57 C15.25 11.1 15.48 10.52 15.81 10.15 C16.59 9.27 32.22 0.0 32.92 0.0 C33.24 0.0 33.82 0.31 34.23 0.69 C34.83 1.25 38.4 7.5 46.93 22.94 C47.41 23.8 47.89 24.5 48.0 24.5 C48.11 24.5 48.59 23.8 49.07 22.94 C57.6 7.5 61.17 1.25 61.77 0.69 C62.18 0.31 62.76 -0.0 63.08 -0.0 C63.78 -0.0 79.41 9.27 80.19 10.15 C81.16 11.24 80.95 12.0 78.33 16.74 C76.99 19.15 75.41 21.88 74.8 22.81 C72.87 25.79 69.78 28.12 66.02 29.45 L64.12 30.12 L50.44 30.25 L36.76 30.38 L35.94 31.19 C35.22 31.91 35.12 32.17 35.12 33.35 C35.12 34.34 35.26 34.85 35.62 35.26 C36.77 36.54 35.68 36.5 66.14 36.5 L94.54 36.5 L95.27 37.23 L96.0 37.96 L96.0 48.0 L96.0 58.04 L95.27 58.77 L94.54 59.5 L81.02 59.5 C73.58 59.5 67.5 59.57 67.5 59.67 C67.5 59.76 70.48 65.19 74.12 71.73 C78.91 80.32 80.75 83.85 80.75 84.43 C80.75 84.9 80.52 85.48 80.19 85.85 C79.41 86.73 63.78 96.0 63.08 96.0 C62.76 96.0 62.18 95.69 61.77 95.31 C61.17 94.75 57.6 88.5 49.07 73.06 C48.59 72.2 48.11 71.5 48.0 71.5 C47.89 71.5 47.41 72.2 46.93 73.06 C38.4 88.5 34.83 94.75 34.23 95.31 C33.82 95.69 33.24 96.0 32.92 96.0 C32.61 96.0 28.76 93.86 24.36 91.24 Z"/></svg>
+      <span>asterisk</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#storage">Storage</a>
+      <a href="#install">Install</a>
+      <a class="gh" href="https://github.com/Nafisarkar/astrisk" aria-label="Asterisk on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-2.91-.88-2.91-2.75 0-.55.2-1 .52-1.35-.05-.13-.23-.64.05-1.33 0 0 .53-.17 1.74.66.51-.14 1.05-.21 1.59-.21s1.08.07 1.59.21c1.21-.83 1.74-.66 1.74-.66.28.69.1 1.2.05 1.33.32.35.52.8.52 1.35 0 1.88-1.13 2.55-2.91 2.75.4.35.63.87.63 1.62 0 1.29-.01 2.33-.01 2.65 0 .21.15.46.55.38C13.71 14.53 16 11.54 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <h1 id="hero-title">API testing that lives in your repo.</h1>
+      <p class="lede">Asterisk is a local-first HTTP client for VS Code. Every request, collection and environment is a plain file you can diff, review and commit. No account, no cloud, no telemetry.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#install">Install</a>
+        <a class="btn btn-ghost" href="https://github.com/Nafisarkar/astrisk">View on GitHub</a>
+      </div>
+      <ul class="meta">
+        <li>0.1 beta</li>
+        <li>zero runtime dependencies</li>
+        <li>MIT</li>
+        <li>works offline</li>
+      </ul>
+    </div>
+    <div class="wrap">
+      <figure class="shot">
+        <div class="shot-frame">
+        <img src="panel-dark.png" width="1000" height="712" alt="The Asterisk request panel in VS Code: a POST to the Stripe customers endpoint with a Bearer token header, and a 200 OK response showing a JSON customer object at 184 ms and 214 B.">
+        </div>
+        <figcaption>The request panel, dark theme.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <h2 id="features-title">Everything the request needs</h2>
+      <p class="body">Headers, auth, bodies, assertions and a runner — in the editor you already have open.</p>
+      <ul class="ledger">
+        <li>
+          <h3>Any method, any body</h3>
+          <p>JSON, text, form, multipart or binary. Content-Type is set for you.</p>
+        </li>
+        <li>
+          <h3>Auth that sticks</h3>
+          <p>Bearer, Basic, API key, and OAuth 2.0 with automatic token refresh.</p>
+        </li>
+        <li>
+          <h3>Environments</h3>
+          <p>{{variables}} everywhere, :path params, and {{$uuid}}, {{$timestamp}}, {{$randomInt}} per send.</p>
+        </li>
+        <li>
+          <h3>Readable responses</h3>
+          <p>JSON tree, find with match count, timings and size, copy or save the body.</p>
+        </li>
+        <li>
+          <h3>Scripts and assertions</h3>
+          <p>Sandboxed pre-request and test scripts. expect(response.status).to.equal(200).</p>
+        </li>
+        <li>
+          <h3>Collection runner</h3>
+          <p>Run a folder sequentially, read the pass/fail table, feed rows from a CSV, stop on the first failure.</p>
+        </li>
+        <li>
+          <h3>WebSocket and SSE</h3>
+          <p>One live socket per panel, a send box for WebSocket, and a log that streams events as they land.</p>
+        </li>
+        <li>
+          <h3>Import and export</h3>
+          <p>cURL, Postman v2.1, OpenAPI 3.x in; cURL, fetch, Python, Go out.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="storage" aria-labelledby="storage-title">
+    <div class="wrap">
+      <h2 id="storage-title">Collections are folders. Requests are files.</h2>
+      <div class="split">
+        <div>
+          <p class="body">Asterisk writes into <code class="inline">.asterisk/</code> at the workspace root. One pretty-printed JSON file per request, so renames show up as renames and a change to an endpoint is a diff you can read in review.</p>
+          <ul class="tick">
+            <li>Environments in one file, <code class="inline">.asterisk/.environments.json</code>.</li>
+            <li>Per-collection and per-folder scripts, inherited outermost first.</li>
+            <li>History stays in workspace storage — never committed.</li>
+          </ul>
+        </div>
+        <pre class="code" tabindex="0" role="region" aria-label="The .asterisk folder layout"><code>repo/.asterisk/
+├── .environments.json      <span class="c"># named environments, active one</span>
+└── My Collection/          <span class="c"># a collection is a folder</span>
+    └── users/list.json     <span class="c"># a request is a file</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="scripts" aria-labelledby="scripts-title">
+    <div class="wrap">
+      <h2 id="scripts-title">Assertions, not vibes.</h2>
+      <div class="split">
+        <div>
+          <pre class="code" tabindex="0" role="region" aria-label="Test script example"><code><span class="c">// test script</span>
+expect(response.status).to.equal(200);
+expect(JSON.parse(response.body).items).to.have.length(2);</code></pre>
+          <div class="chips">
+            <span class="chip">2 passing</span>
+            <span class="note">Failures are reported, not thrown.</span>
+          </div>
+        </div>
+        <div>
+          <p class="body">Every request can carry a pre-request and a test script, saved next to it and inherited from the collection. The sandbox hands you <code class="inline">request</code>, <code class="inline">vars</code> and <code class="inline">setEnv</code> — not <code class="inline">process</code>, <code class="inline">require</code> or the network.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install" aria-labelledby="install-title">
+    <div class="wrap">
+      <h2 id="install-title">Install it and paste a URL.</h2>
+      <p class="body">Not on a marketplace yet. Package it from source:</p>
+      <div class="cmd">
+        <pre><code id="cmd-build">bun install &amp;&amp; bun x vsce package</code></pre>
+        <button class="copy" type="button" data-copy="cmd-build" aria-label="Copy build command">
+          <span class="ico" aria-hidden="true">
+            <svg class="ico-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A1.5 1.5 0 0 0 13.5 4H5.5A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15"/></svg>
+            <svg class="ico-check" viewBox="0 0 24 24"><path d="M4.5 12.5 10 18 19.5 6.5"/></svg>
+          </span>
+          <span class="copy-label">Copy</span>
+        </button>
+      </div>
+      <p class="body">Then install the file it writes, <code class="inline">asterisk-0.1.0-beta.1.vsix</code>:</p>
+      <div class="cmd">
+        <pre><code id="cmd-install">code --install-extension asterisk-0.1.0-beta.1.vsix</code></pre>
+        <button class="copy" type="button" data-copy="cmd-install" aria-label="Copy install command">
+          <span class="ico" aria-hidden="true">
+            <svg class="ico-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A1.5 1.5 0 0 0 13.5 4H5.5A1.5 1.5 0 0 0 4 5.5v8A1.5 1.5 0 0 0 5.5 15"/></svg>
+            <svg class="ico-check" viewBox="0 0 24 24"><path d="M4.5 12.5 10 18 19.5 6.5"/></svg>
+          </span>
+          <span class="copy-label">Copy</span>
+        </button>
+      </div>
+      <p class="sr-only" id="copy-status" role="status" aria-live="polite"></p>
+      <ul class="links">
+        <li><a href="https://github.com/Nafisarkar/astrisk/blob/master/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/Nafisarkar/astrisk/blob/master/FEATURES.md">Feature checklist</a></li>
+        <li><a href="https://github.com/Nafisarkar/astrisk/blob/master/LICENSE">MIT licence</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-inner">
+    <p class="foot-brand">
+      <svg class="mark" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><path fill="currentColor" d="M24.36 91.24 C19.97 88.63 16.12 86.2 15.81 85.85 C14.84 84.76 15.05 84.0 17.67 79.26 C19.01 76.85 20.59 74.12 21.19 73.2 C23.11 70.25 26.15 67.91 29.8 66.55 L31.62 65.88 L45.25 65.75 C60.06 65.61 59.6 65.66 60.51 64.17 C61.42 62.69 61.03 61.08 59.52 60.07 L58.68 59.5 L30.07 59.5 L1.46 59.5 L0.73 58.77 L0.0 58.04 L0.0 48.0 L0.0 37.96 L0.73 37.23 L1.46 36.5 L14.98 36.5 C22.42 36.5 28.5 36.43 28.5 36.33 C28.5 36.24 25.52 30.81 21.88 24.27 C17.09 15.68 15.25 12.15 15.25 11.57 C15.25 11.1 15.48 10.52 15.81 10.15 C16.59 9.27 32.22 0.0 32.92 0.0 C33.24 0.0 33.82 0.31 34.23 0.69 C34.83 1.25 38.4 7.5 46.93 22.94 C47.41 23.8 47.89 24.5 48.0 24.5 C48.11 24.5 48.59 23.8 49.07 22.94 C57.6 7.5 61.17 1.25 61.77 0.69 C62.18 0.31 62.76 -0.0 63.08 -0.0 C63.78 -0.0 79.41 9.27 80.19 10.15 C81.16 11.24 80.95 12.0 78.33 16.74 C76.99 19.15 75.41 21.88 74.8 22.81 C72.87 25.79 69.78 28.12 66.02 29.45 L64.12 30.12 L50.44 30.25 L36.76 30.38 L35.94 31.19 C35.22 31.91 35.12 32.17 35.12 33.35 C35.12 34.34 35.26 34.85 35.62 35.26 C36.77 36.54 35.68 36.5 66.14 36.5 L94.54 36.5 L95.27 37.23 L96.0 37.96 L96.0 48.0 L96.0 58.04 L95.27 58.77 L94.54 59.5 L81.02 59.5 C73.58 59.5 67.5 59.57 67.5 59.67 C67.5 59.76 70.48 65.19 74.12 71.73 C78.91 80.32 80.75 83.85 80.75 84.43 C80.75 84.9 80.52 85.48 80.19 85.85 C79.41 86.73 63.78 96.0 63.08 96.0 C62.76 96.0 62.18 95.69 61.77 95.31 C61.17 94.75 57.6 88.5 49.07 73.06 C48.59 72.2 48.11 71.5 48.0 71.5 C47.89 71.5 47.41 72.2 46.93 73.06 C38.4 88.5 34.83 94.75 34.23 95.31 C33.82 95.69 33.24 96.0 32.92 96.0 C32.61 96.0 28.76 93.86 24.36 91.24 Z"/></svg>
+      asterisk
+    </p>
+    <p class="foot-meta">MIT licence · 0.1 beta</p>
+    <ul class="foot-links">
+      <li><a href="https://github.com/Nafisarkar/astrisk">GitHub</a></li>
+      <li><a href="https://github.com/Nafisarkar/astrisk/issues">Issues</a></li>
+      <li><a href="https://github.com/Nafisarkar/astrisk/blob/master/CHANGELOG.md">Changelog</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var status = document.getElementById('copy-status');
+  var REVERT = 1600;
+
+  function fallback(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    var timer;
+    btn.dataset.label = btn.getAttribute('aria-label') || 'Copy';
+    btn.dataset.done = btn.dataset.label.replace(/^Copy/, 'Copied') + '.';
+    btn.addEventListener('click', function () {
+      // ponytail: a re-entry flag, not `disabled` — disabling a focused button blurs it and
+      // drops keyboard focus to <body> mid-interaction.
+      if (btn.dataset.busy) return;
+      var src = document.getElementById(btn.dataset.copy);
+      var text = src ? src.textContent.trim() : '';
+      btn.dataset.busy = '1';
+
+      var wrote = Promise.resolve(false);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        // ponytail: race a timeout — an unfocused or throttled page can leave writeText pending forever
+        wrote = Promise.race([
+          Promise.resolve()
+            .then(function () { return navigator.clipboard.writeText(text); })
+            .then(function () { return true; }, function () { return false; }),
+          new Promise(function (resolve) { setTimeout(function () { resolve(false); }, 700); })
+        ]);
+      }
+      wrote.then(function (ok) {
+        if (!ok) ok = fallback(text);
+        delete btn.dataset.busy;
+        status.textContent = ok ? btn.dataset.done : 'Copy failed — select the command and copy it manually.';
+        if (!ok) return;
+
+        btn.dataset.state = 'copied';
+        btn.setAttribute('aria-label', 'Copied');
+        btn.querySelector('.copy-label').textContent = 'Copied';
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          delete btn.dataset.state;
+          btn.setAttribute('aria-label', btn.dataset.label);
+          btn.querySelector('.copy-label').textContent = 'Copy';
+          // only clear the announcer if this button still owns it
+          if (status.textContent === btn.dataset.done) status.textContent = '';
+        }, REVERT);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

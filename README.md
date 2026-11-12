@@ -13,6 +13,8 @@
 
 <p align="center"><strong>API testing inside VS Code. No account, no cloud, no telemetry.</strong></p>
 
+<p align="center"><a href="https://nafisarkar.github.io/astrisk/">nafisarkar.github.io/astrisk</a> — what it looks like, and how to install it.</p>
+
 ```bash
 code --install-extension asterisk-0.1.0-beta.1.vsix
 ```
