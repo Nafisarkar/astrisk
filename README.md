@@ -16,8 +16,12 @@
 <p align="center"><a href="https://nafisarkar.github.io/astrisk/">nafisarkar.github.io/astrisk</a> — what it looks like, and how to install it.</p>
 
 ```bash
-code --install-extension nafisarkar.asterisk
+code --install-extension Nafisarkar.asterisk --pre-release
 ```
+
+`--pre-release` is required: 0.1.0 is published to the pre-release channel, so
+there is no stable version to fall back to. In the Extensions view, search
+**Asterisk** and pick *Switch to Pre-Release Version*.
 
 Or build it yourself: `bun install && bun x vsce package`, then
 `code --install-extension asterisk-0.1.0.vsix`.

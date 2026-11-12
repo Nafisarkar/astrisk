@@ -24,7 +24,7 @@ The state *is* the repository. One pretty-printed JSON file per request inside `
 
 ## Operating Context
 
-Used inside VS Code / VSCodium, alongside source files and a terminal. Collections are folders in the repo; the panel opens with a keybinding (`Ctrl+Alt+A`); requests are replayed from history. Installation is `code --install-extension nafisarkar.asterisk` (pre-release channel), or `bun install && bun x vsce package` then `code --install-extension asterisk-0.1.0.vsix` from source.
+Used inside VS Code / VSCodium, alongside source files and a terminal. Collections are folders in the repo; the panel opens with a keybinding (`Ctrl+Alt+A`); requests are replayed from history. Installation is `code --install-extension Nafisarkar.asterisk --pre-release`, or `bun install && bun x vsce package` then `code --install-extension asterisk-0.1.0.vsix` from source.
 
 ## Capabilities and Constraints
 
