@@ -46,7 +46,7 @@ The h1, then the action, settling in on load (`rise`, 520ms, staggered 90ms). Th
 
 ## Weight
 
-The page is one file of ~42KB uncompressed, ~13KB gzipped: 30KB of that is the two inlined font subsets, ~5KB is CSS, ~2KB is the copy script, the rest is markup. No framework, no CDN, no analytics, no build step, no network request after the document.
+The page is one file of 42KB, 28KB gzipped. 30KB of it is the two inlined font subsets — base64 of an already-compressed woff2, which is why gzip only halves what is left. CSS is ~5KB, the copy script ~2KB, the rest markup. Dropping the mono face would take it to 21KB, at the cost of the system's terminal font on a page about a terminal tool. No framework, no CDN, no analytics, no build step, no network request after the document.
 
 ## Known ceilings
 
