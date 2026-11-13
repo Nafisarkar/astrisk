@@ -9,12 +9,13 @@ node_modules/**
 
 # project files that only matter in the repo
 docs/**
-.impeccable/**
 FEATURES.md
 PRODUCT.md
 DESIGN.md
 bunfig.toml
 package-lock.json
+bun.lock
+bun.lockb
 tsconfig.json
 eslint.config.mjs
 **/*.map
@@ -34,4 +35,3 @@ eslint.config.mjs
 
 # art that isn't referenced by the manifest
 media/icon-512.png
-media/icon-badge.svg

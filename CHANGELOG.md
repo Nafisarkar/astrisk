@@ -5,6 +5,14 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
+## [0.1.3] — 2026-11-13
+
+- Removed art nothing referenced: the light banner and panel, the unused badge
+  mark, and the agent scratch directory that was shipping inside the vsix.
+- The stale npm lockfile is gone; `bun.lock` replaces it and CI installs with
+  `--frozen-lockfile`, so a tag build resolves the same tree every time.
+- `media/icon-512.png` stays: it is the master the 128 px icon is rendered from.
+
 ## [0.1.2] — 2026-11-13
 
 - First Open VSX release, so VSCodium and other Open VSX editors can install it.

@@ -27,7 +27,7 @@ code --install-extension Nafisarkar.asterisk --pre-release
 Extensions view, search **Asterisk** and pick *Switch to Pre-Release Version*.
 
 From source instead: `bun install && bun x vsce package`, then
-`code --install-extension asterisk-0.1.2.vsix`.
+`code --install-extension asterisk-0.1.3.vsix`.
 
 ## Why it is different
 

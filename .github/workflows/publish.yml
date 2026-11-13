@@ -25,7 +25,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run compile
       - run: bun test
       - name: the vsix must build before it is published
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - name: publish the pre-release channel
         run: npx --yes @vscode/vsce publish --oidc --pre-release --skip-duplicate
 
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: bun install
+      - run: bun install --frozen-lockfile
       # ovsx packs the extension itself here, because --pre-release only applies
       # while packing; handing it a finished .vsix would silently drop the flag.
       - name: publish to Open VSX

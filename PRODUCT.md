@@ -30,7 +30,7 @@ Used inside VS Code / VSCodium, alongside source files and a terminal. Collectio
 
 Confirmed, from `README.md` and `FEATURES.md`: any method and body type (JSON, text, form, multipart, binary); Bearer, Basic, API key and OAuth 2.0 with refresh; `{{variables}}`, environments, `:path` params, system vars; JSON tree, find, timings, save response; collections and history as files; sandboxed pre-request and test scripts with assertions; sequential collection runner with CSV rows and stop-on-first-failure; WebSocket and SSE; cURL / Postman v2.1 / OpenAPI 3.x import, cURL / fetch / Python / Go export. Zero runtime dependencies. MIT. No telemetry, no account.
 
-Published to the Visual Studio Marketplace as a pre-release under publisher `nafisarkar`; there are no customers, no pricing, no benchmarks and no testimonials, and none of these may be invented. Version is `0.1.2`; the release artefact is the vsix built by `.github/workflows/publish.yml`.
+Published to the Visual Studio Marketplace as a pre-release under publisher `nafisarkar`; there are no customers, no pricing, no benchmarks and no testimonials, and none of these may be invented. Version is `0.1.3`; the release artefact is the vsix built by `.github/workflows/publish.yml`.
 
 ## Brand Commitments
 
@@ -39,7 +39,7 @@ Name is lowercase `asterisk`, mark is the 8-spoke asterisk in `media/icon.svg`. 
 ## Evidence on Hand
 
 - `docs/panel-dark.png` — real 1000×712 render of the request panel, dark theme.
-- `docs/banner-dark.svg` / `banner-light.svg` — the identity banner, mark and wordmark.
+- `docs/banner-dark.svg` — the identity banner, mark and wordmark; `banner-dark.png` is the rendered copy the README embeds.
 - `README.md`, `FEATURES.md`, `CHANGELOG.md` — the authoritative feature and gap record; ceilings are documented honestly and must stay honest on the page.
 
 ## Product Principles
