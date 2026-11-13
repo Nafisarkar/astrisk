@@ -5,6 +5,13 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
+## [0.1.2] — 2026-11-13
+
+- First Open VSX release, so VSCodium and other Open VSX editors can install it.
+- `.vscodeignore` now keeps stray JSON scratch files out of the package: 0.1.1
+  on Open VSX shipped a 588 KB `tree.json` that had been sitting in the repo
+  root.
+
 ## [0.1.1] — 2026-11-12
 
 - The extension icon has transparent corners; it was a white-backed square.

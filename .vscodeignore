@@ -22,6 +22,10 @@ eslint.config.mjs
 **/.vscode-test.*
 .yarnrc
 
+# stray scratch files at the root: only the manifest ships as JSON
+/*.json
+!package.json
+
 .github/**
 
 # never ship a package inside a package
