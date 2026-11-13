@@ -48,8 +48,22 @@ jobs:
         with:
           node-version: 22
       - run: bun install --frozen-lockfile
-      - name: publish the pre-release channel
-        run: npx --yes @vscode/vsce publish --oidc --pre-release --skip-duplicate
+      # Odd minor = pre-release, even minor = stable, which is the scheme the
+      # Marketplace docs recommend. A semver suffix such as 0.2.0-beta.1 is
+      # rejected outright, so the channel flag is the only way to say "beta".
+      - name: decide the channel
+        id: channel
+        run: |
+          version=$(bun -e "console.log(require('./package.json').version)")
+          minor=${version#*.}; minor=${minor%%.*}
+          case "$version" in *-*) suffix=1 ;; *) suffix=0 ;; esac
+          if [ $((minor % 2)) -eq 1 ] || [ "$suffix" = 1 ]; then
+            echo "flag=--pre-release" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+      - name: publish ${{ steps.channel.outputs.flag == '--pre-release' && 'the pre-release channel' || 'the stable channel' }}
+        run: npx --yes @vscode/vsce publish --oidc --skip-duplicate ${{ steps.channel.outputs.flag }}
 
   openvsx:
     needs: verify
@@ -63,14 +77,27 @@ jobs:
         with:
           node-version: 22
       - run: bun install --frozen-lockfile
+      - name: decide the channel
+        id: channel
+        run: |
+          version=$(bun -e "console.log(require('./package.json').version)")
+          minor=${version#*.}; minor=${minor%%.*}
+          case "$version" in *-*) suffix=1 ;; *) suffix=0 ;; esac
+          if [ $((minor % 2)) -eq 1 ] || [ "$suffix" = 1 ]; then
+            echo "flag=--pre-release" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
       # ovsx packs the extension itself here, because --pre-release only applies
       # while packing; handing it a finished .vsix would silently drop the flag.
       - name: publish to Open VSX
         env:
           # only needed for the first publish from a private repository
           OVSX_REGISTRATION_CODE: ${{ secrets.OVSX_REGISTRATION_CODE }}
+          PREFLAG: ${{ steps.channel.outputs.flag }}
         run: |
-          args=(publish --trusted-publishing --pre-release --skip-duplicate)
+          args=(publish --trusted-publishing --skip-duplicate)
+          if [ -n "$PREFLAG" ]; then args+=("$PREFLAG"); fi
           if [ -n "$OVSX_REGISTRATION_CODE" ]; then
             args+=(--registrationCode "$OVSX_REGISTRATION_CODE")
           fi

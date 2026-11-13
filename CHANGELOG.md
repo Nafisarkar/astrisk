@@ -5,6 +5,12 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
+## [Unreleased]
+
+- The publish workflow picks the channel from the version instead of always
+  forcing pre-release: odd minor (0.1.x, 0.3.x) is a pre-release, even minor
+  (0.2.0, 0.4.0) is stable. Cut a stable release by bumping the minor.
+
 ## [0.1.3] — 2026-11-13
 
 - Removed art nothing referenced: the light banner and panel, the unused badge
