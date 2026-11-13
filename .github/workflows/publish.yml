@@ -1,9 +1,9 @@
 name: publish
 
-# Tag-driven. The Visual Studio Marketplace job carries no secret: it exchanges
-# a short-lived GitHub OIDC token for a publishing credential (trusted
-# publishing). Open VSX has no such exchange for this account, so it reads a
-# personal access token from the OVSX_PAT secret and skips when it is absent.
+# Tag-driven and secret-free. Both registries trade a short-lived GitHub OIDC
+# token for a publishing credential (trusted publishing); nothing long-lived is
+# stored. The only optional secret is OVSX_REGISTRATION_CODE, which the Open VSX
+# registry issues once when a trusted publisher is registered on a private repo.
 on:
   push:
     tags: ['v*']
@@ -67,10 +67,11 @@ jobs:
       # while packing; handing it a finished .vsix would silently drop the flag.
       - name: publish to Open VSX
         env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          # only needed for the first publish from a private repository
+          OVSX_REGISTRATION_CODE: ${{ secrets.OVSX_REGISTRATION_CODE }}
         run: |
-          if [ -z "$OVSX_PAT" ]; then
-            echo "::notice::OVSX_PAT is not set, skipping Open VSX"
-            exit 0
+          args=(publish --trusted-publishing --pre-release --skip-duplicate)
+          if [ -n "$OVSX_REGISTRATION_CODE" ]; then
+            args+=(--registrationCode "$OVSX_REGISTRATION_CODE")
           fi
-          npx --yes ovsx@1.4.0 publish -p "$OVSX_PAT" --pre-release --skip-duplicate
+          npx --yes ovsx@1.4.0 "${args[@]}"
