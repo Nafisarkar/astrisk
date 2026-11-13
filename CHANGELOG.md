@@ -5,11 +5,20 @@ All notable changes to **asterisk** are documented here. The format follows
 [semantic versioning](https://semver.org/spec/v2.0.0.html); pre-1.0 means the minor
 number may break things, and until 1.0 every entry is a candidate for change.
 
-## [Unreleased]
+## [0.2.0] — 2026-11-13
 
-- The publish workflow picks the channel from the version instead of always
-  forcing pre-release: odd minor (0.1.x, 0.3.x) is a pre-release, even minor
-  (0.2.0, 0.4.0) is stable. Cut a stable release by bumping the minor.
+First stable release, so installing no longer needs `--pre-release`.
+
+- Also on Open VSX, which is what VSCodium and other Open VSX editors install
+  from.
+- Publishing is credential-free end to end: both registries trade a GitHub OIDC
+  token for a short-lived publishing credential, and the version's minor number
+  picks the channel — odd is pre-release, even is stable.
+- Comment pass over `src`: the box-drawn section banners are plain labels now,
+  and three comments that restated a signature or ran three lines around one
+  fact are down to what they were carrying.
+- Fixed a doc block in `scopes.ts` that documented `collectScopeScripts` while
+  sitting above `insideRoot`, so the wrong function wore it.
 
 ## [0.1.3] — 2026-11-13
 

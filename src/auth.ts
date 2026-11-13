@@ -1,6 +1,5 @@
-// Auth — no vscode imports so it stays unit-testable under bun.
+// Auth — no vscode imports, so it unit-tests under bun.
 //
-// One entry point: `applyAuth` takes the request about to be sent and returns it with auth applied.
 // User-facing failures come back as `error` strings, never exceptions, matching http.ts.
 import { createHash, randomUUID } from 'node:crypto';
 import { resolveVars } from './http';

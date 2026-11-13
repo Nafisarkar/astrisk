@@ -3,7 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=Nafisarkar.asterisk"><img src="https://img.shields.io/badge/marketplace-pre--release-0078d4" alt="Marketplace, pre-release channel"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=Nafisarkar.asterisk"><img src="https://img.shields.io/badge/marketplace-0.2.0-0078d4" alt="Visual Studio Marketplace"></a>
+  <a href="https://open-vsx.org/extension/nafisarkar/asterisk"><img src="https://img.shields.io/badge/open_vsx-0.2.0-a60ee5" alt="Open VSX"></a>
   <a href="test"><img src="https://img.shields.io/badge/tests-1047_passing-2ea043" alt="1047 tests passing"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/runtime_deps-0-2ea043" alt="zero runtime dependencies"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6e7681" alt="MIT licence"></a>
@@ -20,14 +21,13 @@ account, no cloud, no telemetry — and no runtime dependencies.
 ## Install
 
 ```bash
-code --install-extension Nafisarkar.asterisk --pre-release
+code --install-extension Nafisarkar.asterisk
 ```
 
-`--pre-release` is required: 0.1.0 is only on the pre-release channel. In the
-Extensions view, search **Asterisk** and pick *Switch to Pre-Release Version*.
-
-From source instead: `bun install && bun x vsce package`, then
-`code --install-extension asterisk-0.1.3.vsix`.
+VSCodium and other Open VSX editors: `codium --install-extension nafisarkar.asterisk`.
+From source: `bun install && bun x vsce package`, then
+`code --install-extension asterisk-0.2.0.vsix`. Pre-release builds are opt-in
+from the Extensions view.
 
 ## Why it is different
 
@@ -78,4 +78,4 @@ bun x vsce package         # build the .vsix
 and milestones live in [FEATURES.md](FEATURES.md); the design rules are in
 [DESIGN.md](DESIGN.md).
 
-<p align="center"><sub>MIT licence · pre-release · no telemetry</sub></p>
+<p align="center"><sub>MIT licence · no telemetry · no account</sub></p>

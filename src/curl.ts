@@ -34,9 +34,7 @@ const IGNORED_WITH_VALUE = new Set([
 	'-K', '--config', '-E', '--cert-type', '--key-type', '--proto', '--proto-redir',
 ]);
 
-// ---------------------------------------------------------------------------------------------
 // helpers
-// ---------------------------------------------------------------------------------------------
 
 /** POSIX single-quoting: `it's` -> `'it'\''s'`. Always quoted, so output is deterministic. */
 function quote(value: string): string {
@@ -92,9 +90,7 @@ function sniffFormat(content: string): RawFormat {
 	return looksLikeJson(trimmed) ? 'json' : 'text';
 }
 
-// ---------------------------------------------------------------------------------------------
 // export: SavedRequest -> cURL
-// ---------------------------------------------------------------------------------------------
 
 function bodyArgs(body: RequestBody | undefined): string[] {
 	const out: string[] = [];
@@ -155,9 +151,7 @@ export function toCurl(request: SavedRequest): string {
 	return args.join(' ');
 }
 
-// ---------------------------------------------------------------------------------------------
 // import: cURL -> SavedRequest
-// ---------------------------------------------------------------------------------------------
 
 /** ANSI-C quoting (`$'…'`) escapes, minimally: everything else stays verbatim. */
 const ANSI_C: Record<string, string> = { n: '\n', t: '\t', r: '\r', '\\': '\\', "'": "'", '"': '"', '0': '\0' };
@@ -261,8 +255,7 @@ const looksLikeUrl = (token: string): boolean =>
 	/^https?:\/\//i.test(token) || /^[a-z][a-z0-9+.-]*:\/\//i.test(token) || token.startsWith('{{');
 
 /**
- * Parse a cURL command, with or without line continuations (`\`, `^`, backtick), single or double
- * quotes.
+ * Parse a cURL command, with or without line continuations (`\`, `^`, backtick).
  */
 export function fromCurl(text: string): SavedRequest {
 	if (typeof text !== 'string' || !text.trim()) {
@@ -440,9 +433,7 @@ export function fromCurl(text: string): SavedRequest {
 	return request;
 }
 
-// ---------------------------------------------------------------------------------------------
 // import: Postman v2.1
-// ---------------------------------------------------------------------------------------------
 
 function postmanBody(body: unknown): RequestBody | undefined {
 	if (!isObject(body)) {return undefined;}
@@ -630,9 +621,7 @@ export function importPostman(json: unknown): ImportedRequest[] {
 	return out;
 }
 
-// ---------------------------------------------------------------------------------------------
 // import: OpenAPI 3.x / Swagger 2.0
-// ---------------------------------------------------------------------------------------------
 
 function openApiServer(root: Record<string, any>): string {
 	const servers = Array.isArray(root.servers) ? root.servers : [];

@@ -44,16 +44,16 @@ export function writeScripts(dir: string, scripts: Scripts): void {
 	writeFileSync(join(dir, SCRIPTS_FILE), JSON.stringify(scripts, null, 2) + '\n', 'utf8');
 }
 
-/**
- * Scripts that apply to `file`, outermost first: collection, then each nested folder, then the
- * request's own scripts. Stop climbing at `root` (the `.asterisk` directory).
- */
 /** `relative` rather than a string prefix: `.asterisk-old` must not count as inside `.asterisk`. */
 function insideRoot(root: string, path: string): boolean {
 	const rel = relative(root, path);
 	return rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep);
 }
 
+/**
+ * Scripts that apply to `file`, outermost first: collection, then each nested folder, then the
+ * request's own scripts. Stop climbing at `root` (the `.asterisk` directory).
+ */
 export function collectScopeScripts(root: string, file: string, request?: SavedRequest): Scripts & { origin?: ScriptOrigin } {
 	const chain: Scripts[] = [];
 	const origin: ScriptOrigin = { preRequest: [], test: [] };

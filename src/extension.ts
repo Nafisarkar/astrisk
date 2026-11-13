@@ -131,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(watcher, watcher.onDidChange(pushEnvs), watcher.onDidCreate(pushEnvs), watcher.onDidDelete(pushEnvs));
 }
 
-// ---------------------------------------------------------------- collections
+// collections
 
 /** Collections live in `<workspace>/.asterisk/`. First workspace folder wins. */
 function collectionsRoot(): string | undefined {
@@ -380,7 +380,7 @@ async function showRequest(context: vscode.ExtensionContext, request: SavedReque
 	return true;
 }
 
-// ------------------------------------------------------------ import / export
+// import / export
 
 /** Write imported requests into a collection, one folder level per `folder` segment. */
 export function importRequests(root: string, collection: string, imported: readonly ImportedRequest[]): number {
@@ -467,7 +467,7 @@ export async function saveResponseFile(body: string, name: string): Promise<stri
 	return picked.fsPath;
 }
 
-// -------------------------------------------------------------------- history
+// history
 
 function logHistory(request: SavedRequest, response: HttpResponse): void {
 	if (!storageDir) {return;}
@@ -740,7 +740,7 @@ export async function performSend(
 	return execute(request, vars, scripts, run, true);
 }
 
-// ------------------------------------------------------------------- sockets
+// sockets
 
 function closeSocket(): void {
 	socket.close();
@@ -804,7 +804,7 @@ function connectSocket(current: vscode.WebviewPanel, mode: string, rawUrl: strin
 	socket.open({ kind: 'ws', handle: opened });
 }
 
-// ------------------------------------------------------------------- runner
+// runner
 
 /** Flatten a collection/folder node into runnable items, each with its scoped scripts merged. */
 export function collectRunItems(node: TreeNode, collectionsDir: string | undefined = collectionsRoot()): RunItem[] {
@@ -943,7 +943,7 @@ function showRunResults(title: string, results: RunResult[]): void {
 	runPanel.onDidDispose(() => {runPanel = undefined;});
 }
 
-// --------------------------------------------------------------------- panel
+// panel
 
 function panelOptions(context: vscode.ExtensionContext): vscode.WebviewPanelOptions & vscode.WebviewOptions {
 	return {

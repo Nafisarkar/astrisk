@@ -24,13 +24,13 @@ The state *is* the repository. One pretty-printed JSON file per request inside `
 
 ## Operating Context
 
-Used inside VS Code / VSCodium, alongside source files and a terminal. Collections are folders in the repo; the panel opens with a keybinding (`Ctrl+Alt+A`); requests are replayed from history. Installation is `code --install-extension Nafisarkar.asterisk --pre-release`, or `bun install && bun x vsce package` then `code --install-extension asterisk-0.1.0.vsix` from source.
+Used inside VS Code / VSCodium, alongside source files and a terminal. Collections are folders in the repo; the panel opens with a keybinding (`Ctrl+Alt+A`); requests are replayed from history. Installation is `code --install-extension Nafisarkar.asterisk`, or `bun install && bun x vsce package` then `code --install-extension asterisk-0.2.0.vsix` from source.
 
 ## Capabilities and Constraints
 
 Confirmed, from `README.md` and `FEATURES.md`: any method and body type (JSON, text, form, multipart, binary); Bearer, Basic, API key and OAuth 2.0 with refresh; `{{variables}}`, environments, `:path` params, system vars; JSON tree, find, timings, save response; collections and history as files; sandboxed pre-request and test scripts with assertions; sequential collection runner with CSV rows and stop-on-first-failure; WebSocket and SSE; cURL / Postman v2.1 / OpenAPI 3.x import, cURL / fetch / Python / Go export. Zero runtime dependencies. MIT. No telemetry, no account.
 
-Published to the Visual Studio Marketplace as a pre-release under publisher `nafisarkar`; there are no customers, no pricing, no benchmarks and no testimonials, and none of these may be invented. Version is `0.1.3`; the release artefact is the vsix built by `.github/workflows/publish.yml`.
+Published to the Visual Studio Marketplace and Open VSX under publisher `nafisarkar`; there are no customers, no pricing, no benchmarks and no testimonials, and none of these may be invented. Version is `0.2.0`, the first stable release; the release artefact is the vsix built by `.github/workflows/publish.yml`.
 
 ## Brand Commitments
 

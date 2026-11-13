@@ -1,8 +1,8 @@
 // Code snippets for a saved request in four languages — no vscode, no network, pure string work.
 //
-// `curl` delegates to curl.ts: one source of truth for its quoting. The other three emit runnable
-// code and stay honest about what cannot be inlined — a file body or a multipart upload becomes a
-// TODO comment instead of a snippet that silently sends the wrong thing.
+// `curl` delegates to curl.ts for quoting. The other three emit runnable code, and anything that
+// cannot be inlined (a file body, a multipart upload) becomes a TODO comment rather than a snippet
+// that silently sends the wrong thing.
 import { toCurl } from './curl';
 import type { Field, FileRef, RawFormat, RequestBody } from './http';
 import type { SavedRequest } from './store';
@@ -21,9 +21,7 @@ const BINARY_TYPE = 'application/octet-stream';
 const JS = '  ';   // generated JS indents with two spaces
 const GO = '\t';   // gofmt uses tabs
 
-// ---------------------------------------------------------------------------------------------
 // helpers
-// ---------------------------------------------------------------------------------------------
 
 const str = (value: unknown): string =>
 	typeof value === 'string' ? value : typeof value === 'number' ? String(value) : '';
@@ -84,9 +82,7 @@ function parsedJson(text: string): boolean {
 	}
 }
 
-// ---------------------------------------------------------------------------------------------
 // the request, flattened into what every generator needs
-// ---------------------------------------------------------------------------------------------
 
 interface Plan {
 	kind: 'none' | 'raw' | 'urlencoded' | 'multipart' | 'binary';
@@ -160,9 +156,7 @@ function authNote(request: SavedRequest, marker: string): string[] {
 const filesTodo = (files: FileRef[]): string[] =>
 	files.map((file) => `TODO: attach ${flat(file.path) || '(no path set)'} manually`);
 
-// ---------------------------------------------------------------------------------------------
 // fetch
-// ---------------------------------------------------------------------------------------------
 
 function fetchBody(plan: Plan): string {
 	if (plan.kind === 'raw') {return q(plan.content);}
@@ -208,9 +202,7 @@ function fetchSnippet(request: SavedRequest): string {
 	].join('\n') + '\n';
 }
 
-// ---------------------------------------------------------------------------------------------
 // python
-// ---------------------------------------------------------------------------------------------
 
 const pyDict = (fields: Field[]): string =>
 	`{${fields.map((field) => `${q(field.key)}: ${q(field.value)}`).join(', ')}}`;
@@ -306,9 +298,7 @@ function pythonSnippet(request: SavedRequest): string {
 	].join('\n') + '\n';
 }
 
-// ---------------------------------------------------------------------------------------------
 // go
-// ---------------------------------------------------------------------------------------------
 
 /** Same encoding the wire uses for a urlencoded body, computed here so Go needs no extra import. */
 const encodedFields = (fields: Field[]): string =>
@@ -378,9 +368,7 @@ function goSnippet(request: SavedRequest): string {
 	].join('\n') + '\n';
 }
 
-// ---------------------------------------------------------------------------------------------
 // entry point
-// ---------------------------------------------------------------------------------------------
 
 /** A ready-to-run snippet. `curl` delegates to `toCurl` — never duplicate that logic. */
 export function snippet(lang: SnippetLang, request: SavedRequest): string {
